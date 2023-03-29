@@ -39,6 +39,16 @@ function Grid3D:init(gridData, cellSize)
     -- Set camera direction
     self.orbitViewer.rx = 45 -- Point the camera downwards
     self.orbitViewer.ry = 0
+
+    -- Add an invisible plane for raycasting when touch is outside grid bounds
+    local planeEntity = self.scene:entity()
+    planeEntity.position = vec3(self.width / 2, 0, self.height / 2)
+    planeEntity:add(craft.rigidbody, STATIC)
+    planeEntity:add(craft.shape.box, vec3(self.width * 2, 0.1, self.height * 2))
+    planeEntity.collisionMask = 2
+    
+    self.draggingUnit = nil
+    self.originalUnitPosition = nil
 end
 
 function Grid3D:createGrid()
@@ -60,6 +70,8 @@ function Grid3D:createGrid()
             -- Add a physics body to the cell entity
             cellEntity:add(craft.rigidbody, STATIC)
             cellEntity:add(craft.shape.box, vec3(self.cellSize, 0.1, self.cellSize))
+            cellEntity.collisionMask = 1
+            
             table.insert(tiles, cellEntity)
         end
     end
@@ -72,6 +84,7 @@ function Grid3D:entityForUnit(unit)
     cube:add(craft.renderer, craft.model.cube(vec3(unitSize, unitSize, unitSize)))
     cube:get(craft.renderer).material = craft.material(asset.builtin.Materials.Standard)
     cube:get(craft.renderer).material.map = unit.icon
+    cube.collisionMask = 1
     return cube
 end
 
@@ -125,6 +138,17 @@ function Grid3D:update(dt)
     end
 end
 
+function Grid3D:touched(touch)
+    if not self.draggingUnit then
+        grid3D.orbitViewer:touched(touch)
+    end
+    if CurrentTouch.state == BEGAN then
+        grid3D:touchPressed(CurrentTouch)
+    elseif CurrentTouch.state == ENDED or CurrentTouch.state == CANCELLED then
+        grid3D:touchReleased(CurrentTouch)
+    end
+end
+
 function Grid3D:touchPressed(touch)
     local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
     local hit = self.scene.physics:raycast(origin, direction, 2000)    
@@ -144,9 +168,125 @@ function Grid3D:touchPressed(touch)
         self.gridData.selectedC = nil
     end
     print("pressed: ", self.gridData.selectedR, self.gridData.selectedC)
+    
+    local cell = self.gridData:getCell(self.gridData.selectedR, self.gridData.selectedC)
+    local unit = cell:getContent(Content.UNIT)
+    if unit then
+        self.draggingUnit = self.entities[unit.id]
+        self.originalUnitPosition = self.draggingUnit.position
+    end
 end
 
+-- Create a new touchMoved function to handle dragging
+--[[
+function Grid3D:touchMoved(touch)
+    if self.draggingUnit then
+        local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
+        local hit = self.scene.physics:raycast(origin, direction, 2000)
+        if hit and hit.entity then
+            local newPosition = hit.point + vec3(0, self.cellSize * 0.35, 0)
+            self.draggingUnit.position = newPosition
+        end
+    end
+end
+]]
+
+
+
+
+function Grid3D:touchPressed(touch)
+    local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
+    local hit = self.scene.physics:raycast(origin, direction, 2000)    
+    if hit and hit.entity then
+        local r, c = self:worldToGrid(hit.point)
+        if r and c then
+            self.gridData.selectedR = r
+            self.gridData.selectedC = c
+        else
+            -- Deselect the cell when tapping outside the grid
+            self.gridData.selectedR = nil
+            self.gridData.selectedC = nil
+        end
+    else 
+        -- Deselect the cell when tapping outside the grid
+        self.gridData.selectedR = nil
+        self.gridData.selectedC = nil
+    end
+    print("pressed: ", self.gridData.selectedR, self.gridData.selectedC)
+    
+    local cell = self.gridData:getCell(self.gridData.selectedR, self.gridData.selectedC)
+    local unit = cell:getContent(Content.UNIT)
+    if unit then
+        self.draggingUnit = self.entities[unit.id]
+        self.originalUnitPosition = self.draggingUnit.position
+        -- Change the unit's elevation when picked up
+        self.draggingUnit.position = self.draggingUnit.position + vec3(0, self.cellSize * 0.5, 0)
+    end
+end
+
+function Grid3D:touchMoved(touch)
+    if self.draggingUnit then
+        local newPosition = self.orbitViewer:screenToWorldPlane(vec2(touch.x, touch.y), self.draggingUnit.position.y)
+        if newPosition then
+            print("New Position:", newPosition)
+            self.draggingUnit.position = newPosition
+        end
+    end
+end
+
+--[[
+function Grid3D:touchPressed(touch)
+    local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
+    local hit = self.scene.physics:raycast(origin, direction, 2000)    
+    if hit and hit.entity then
+        local r, c = self:worldToGrid(hit.point)
+        if r and c then
+            self.gridData.selectedR = r
+            self.gridData.selectedC = c
+        else
+            -- Deselect the cell when tapping outside the grid
+            self.gridData.selectedR = nil
+            self.gridData.selectedC = nil
+        end
+    else 
+        -- Deselect the cell when tapping outside the grid
+        self.gridData.selectedR = nil
+        self.gridData.selectedC = nil
+    end
+    print("pressed: ", self.gridData.selectedR, self.gridData.selectedC)
+    
+    local cell = self.gridData:getCell(self.gridData.selectedR, self.gridData.selectedC)
+    local unit = cell:getContent(Content.UNIT)
+    if unit then
+        self.draggingUnit = self.entities[unit.id]
+        self.originalUnitPosition = self.draggingUnit.position
+        print("Dragging unit set:", self.draggingUnit) -- Debugging print statement
+    end
+end
+]]
+
+
 function Grid3D:touchReleased(touch)
+    if self.draggingUnit then
+        local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
+        local hit = self.scene.physics:raycast(origin, direction, 2000)
+        local releasedOnValidCell = false
+        if hit and hit.entity then
+            local r, c = self:worldToGrid(hit.point)
+            if r and c then
+                local movedSuccessfully = self.gridData:moveUnit(self.gridData.selectedR, self.gridData.selectedC, r, c)
+                if movedSuccessfully then
+                    releasedOnValidCell = true
+                end
+            end
+        end
+        if not releasedOnValidCell then
+            self.draggingUnit.position = self.originalUnitPosition
+        else
+            self.draggingUnit = nil
+            self.originalUnitPosition = nil
+        end
+    end
     if self.gridData.selectedR and self.gridData.selectedC then
         local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
         local hit = self.scene.physics:raycast(origin, direction, 2000)
@@ -159,6 +299,29 @@ function Grid3D:touchReleased(touch)
         end
     end
 end
+
+function Grid3D:touchReleased(touch)
+    if self.draggingUnit then
+        local origin, direction = self.orbitViewer.camera:screenToRay(vec2(touch.x, touch.y))
+        local hit = self.scene.physics:raycast(origin, direction, 2000)
+        local releasedOnValidCell = false
+        if hit and hit.entity then
+            local r, c = self:worldToGrid(hit.point)
+            if r and c then
+                local movedSuccessfully = self.gridData:moveUnit(self.gridData.selectedR, self.gridData.selectedC, r, c)
+                if movedSuccessfully then
+                    releasedOnValidCell = true
+                end
+            end
+        end
+        if not releasedOnValidCell then
+            self.draggingUnit.position = self.originalUnitPosition
+        end
+        self.draggingUnit = nil
+        self.originalUnitPosition = nil
+    end
+end
+
 
 function Grid3D:highlightSelectedCell()
     if self.selectedCell then     
@@ -194,4 +357,3 @@ function Grid3D:getCellEntity(r, c)
     local cellIndex = (r - 1) * self.gridData.columns + c
     return self.tiles[cellIndex]
 end
-

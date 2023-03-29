@@ -27,11 +27,13 @@ function draw()
     else
         grid3D:draw()
         grid3D:update(DeltaTime)
-        
-        if CurrentTouch.state == BEGAN then
-            grid3D:touchPressed(CurrentTouch)
-        elseif CurrentTouch.state == ENDED or CurrentTouch.state == CANCELLED then
-            grid3D:touchReleased(CurrentTouch)
-        end
+    end 
+end
+
+function touched(touch)
+    if not show3D then
+        grid2D:touched(touch)
+    else
+        grid3D:touched(touch)
     end 
 end
