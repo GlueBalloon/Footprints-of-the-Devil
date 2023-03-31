@@ -8,6 +8,7 @@ function Grid3D:init(gridData, cellSize)
 end
 
 function Grid3D:setupGrid()
+    self.defaultCellImage = readImage(asset.builtin.Blocks.Trunk_White_Top)
     self.scene = craft.scene()
     self:makeGridEntities()
     self:setupCamera()
@@ -27,7 +28,7 @@ function Grid3D:makeGridEntities()
             local cellModel = craft.model.cube(vec3(self.cellSize, 0.1, self.cellSize))
             cellEntity:add(craft.renderer, cellModel)
             cellEntity.material = craft.material(asset.builtin.Materials.Specular)
-            cellEntity.material.map = readImage(asset.builtin.Blocks.Glass)
+            cellEntity.material.map = self.defaultCellImage
             
             -- Add a physics body to the cell entity
             cellEntity:add(craft.rigidbody, STATIC)
@@ -77,7 +78,7 @@ function Grid3D:clearSelectedCellEffect(entity)
         return
     else
         entity.material = craft.material(asset.builtin.Materials.Specular)
-        entity.material.map = readImage(asset.builtin.Blocks.Glass)
+        entity.material.map = self.defaultCellImage
         entity:get(craft.renderer).material.diffuse = color(255, 255, 255)
     end
 end
@@ -87,7 +88,7 @@ function Grid3D:getCellEntity(r, c)
     return self.tiles[cellIndex]
 end
 
-function Grid3D:pointToRowAndColumn(point)
+function Grid3D:rowAndColumnFromPoint(point)
     local origin, direction = self.orbitViewer.camera:screenToRay(vec2(point.x, point.y))
     local hit = self.scene.physics:raycast(origin, direction, 2000)    
     if hit and hit.entity then

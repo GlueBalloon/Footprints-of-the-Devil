@@ -9,15 +9,21 @@ function GridData:init(rows, columns)
     self.selectedC = nil   
     self.units = {} -- Stores unit positions
     self.nextUnitId = 1 -- Initialize the next unit ID to 1
-    -- Initialize the grid with empty cells and no units
+
     for r = 1, rows do
+        local row = {}
         for c = 1, columns do
-            self.cells[self:coordToIndex(r, c)] = Cell()
+            row[c] = Cell()
         end
+        self.cells[r] = row
     end
 end
 
-function GridData:addUnit(r, c, icon, state)
+function GridData:getCell(r, c)
+    return self.cells[r][c]
+end
+
+function GridData:addNewUnitUsing(icon, state, r, c)
     local unit = Unit(self.nextUnitId, icon, state)
     self:placeUnit(unit, r, c)
     self.nextUnitId = self.nextUnitId + 1
@@ -31,18 +37,12 @@ function GridData:coordToIndex(row, col)
     return (row - 1) * self.columns + col
 end
 
-
-function GridData:placeUnit(unit, r, c)
-    self:getCell(r, c):addContent(Content.UNIT, unit)
+function GridData:placeUnitData(unit, r, c)
+    local cell = self:getCell(r, c)
+    cell:addContent(Content.UNIT, unit)
 end
 
-function GridData:moveUnit(fromR, fromC, toR, toC)
-    local unit = self:getUnit(fromR, fromC)
-    self:getCell(fromR, fromC):removeContent(Content.UNIT)
-    self:getCell(toR, toC):addContent(Content.UNIT, unit)
-end
-
-function GridData:removeUnit(r, c)
+function GridData:removeUnitData(r, c)
     self:getCell(r, c):removeContent(Content.UNIT)
 end
 
@@ -50,6 +50,8 @@ function GridData:getUnit(r, c)
     return self:getCell(r, c):getContent(Content.UNIT)
 end
 
-function GridData:getCell(r, c)
-    return self.cells[self:coordToIndex(r, c)]
+function GridData:moveUnit(fromR, fromC, toR, toC)
+    local unit = self:getUnit(fromR, fromC)
+    self:getCell(fromR, fromC):removeContent(Content.UNIT)
+    self:getCell(toR, toC):addContent(Content.UNIT, unit)
 end

@@ -6,7 +6,8 @@ function Grid2D:init(gridData, cellSize)
     self.offsetX = (WIDTH - gridData.columns * cellSize) / 2
     self.offsetY = (HEIGHT - gridData.rows * cellSize) / 2
     self.cellColor = color(234, 232, 222)
-    self.cellSelectionColor = color(164, 236, 67, 144)
+    self.cellSelectionColor = color(99, 153, 27, 112)
+    self.defaultCellImage = readImage(asset.builtin.Blocks.Trunk_White_Top)
 end
 
 function Grid2D:draw()
@@ -16,6 +17,7 @@ function Grid2D:draw()
     translate(self.offsetX, self.offsetY)
     self:drawCells()
     self:updateSelectionVisuals(self:selectedCoords())
+    self:drawUnits()
     
     popStyle()
     popMatrix()
@@ -29,11 +31,44 @@ function Grid2D:drawCells()
             
             fill(self.cellColor)
             rect(x, y, self.cellSize, self.cellSize)  
+            spriteMode(rectMode())
+            sprite(readImage(asset.builtin.Blocks.Trunk_White_Top), x, y, self.cellSize)
         end
     end
 end
 
-function Grid2D:pointToRowAndColumn(point)
+function Grid2D:drawUnits()
+    for r = 1, self.gridData.rows do
+        for c = 1, self.gridData.columns do
+            local cell = self.gridData:getCell(r, c)
+            local unit = cell:getContent(Content.UNIT)
+            if unit then
+                local x = (c - 1) * self.cellSize
+                local y = (self.gridData.rows - r) * self.cellSize
+                self:drawUnitIcon(unit.icon, x, y, self.cellSize, self.cellSize)
+            end
+        end
+    end
+end
+
+function Grid2D:drawUnitIcon(icon, x, y, width, height)
+    pushStyle()
+    
+    spriteMode(CORNER)
+    local iconWidth, iconHeight = spriteSize(icon)
+    local scale = math.min(width / iconWidth, height / iconHeight)
+    
+    local scaledWidth = iconWidth * scale
+    local scaledHeight = iconHeight * scale
+    local offsetX = (width - scaledWidth) / 2
+    local offsetY = (height - scaledHeight) / 2
+    
+    sprite(icon, x + offsetX, y + offsetY, scaledWidth, scaledHeight)
+    
+    popStyle()
+end
+
+function Grid2D:rowAndColumnFromPoint(point)
     local adjustedX = point.x - self.offsetX
     local adjustedY = point.y - self.offsetY
     
