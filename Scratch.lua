@@ -1,74 +1,49 @@
---[[
- Grid3D = class()
-
-function Grid3D:init(gridData, cellSize)
-    -- Capture parameters
-    self.gridData = gridData
-    self.cellSize = cellSize
-    
-    -- Set up the grid and camera
-    self:setupGrid()
-    
-    -- Initialize other variables
-    self.selectedCell = nil
-    self.draggingUnit = nil
-    self.originalUnitPosition = nil
-end
-
--- Set up the grid and camera
-function Grid3D:setupGrid()
-    -- Set up the scene
-    self.scene = craft.scene()
-    
-    -- Create the grid
-    self:createGrid()
-    
-    -- Set up the camera
-    self:setupCamera()
-end
-
-function Grid3D:createGrid()
-    self.tiles = {}
-    for r = 1, self.gridData.rows do
-        for c = 1, self.gridData.columns do
-            
-            local x = (c - self.gridData.columns) * -self.cellSize
-            local z = (self.gridData.rows - r) * self.cellSize   
-            
-            local cellEntity = self.scene:entity()
-            cellEntity.position = vec3(x, 0, z)
-            
-            local cellModel = craft.model.cube(vec3(self.cellSize, 0.1, self.cellSize))
-            cellEntity:add(craft.renderer, cellModel)
-            cellEntity.material = craft.material(asset.builtin.Materials.Specular)
-            cellEntity.material.map = readImage(asset.builtin.Blocks.Glass)
-            
-            -- Add a physics body to the cell entity
-            cellEntity:add(craft.rigidbody, STATIC)
-            cellEntity:add(craft.shape.box, vec3(self.cellSize, 0.1, self.cellSize))
-            cellEntity.collisionMask = 1
-            
-            table.insert(self.tiles, cellEntity)
-        end
-    end
-end
+-- Main
+function setup()
+scene = craft.scene()
 
 -- Set up camera
-function Grid3D:setupCamera()
-    local width, height = self.gridData.columns * self.cellSize, self.gridData.rows * self.cellSize
-    self.orbitViewer = self.scene.camera:add(OrbitViewer, vec3(width / 2, height * 1.5, width / 1.5), 45, 0, 1000)
-    self.orbitViewer.target = vec3(width / 2, 0, height / 2)
-    self.orbitViewer.rx, self.orbitViewer.ry = 45, 0
+scene.camera:add(OrbitViewer, vec3(0, 5, 20), 30, 0, 2000)
+
+-- Create a cube
+createTransparentCube(vec3(0, 0, 0))
 end
 
--- The draw function
-function Grid3D:draw(deltaTime)
-    self.scene:draw()
-    self.scene:update(deltaTime)
+function draw()
+update(DeltaTime)
+scene:draw()
 end
 
--- The touched function
-function Grid3D:touched(touch)
-    grid3D.orbitViewer:touched(touch)
+function update(dt)
+scene:update(dt)
 end
-]]
+
+-- Custom transparent cube
+function createTransparentCube(position)
+local cube = scene:entity()
+cube.position = position
+
+local model = craft.model.cube(vec3(1, 1, 1))
+local renderer = cube:add(craft.renderer, model)
+
+-- Load custom texture (replace with your own texture asset)
+local customTexture = readImage(asset.myTransparentTexture)
+
+-- Create a custom material
+local customMaterial = craft.material(asset.builtin.Materials.Standard)
+customMaterial.map = customTexture
+customMaterial.blendMode = NORMAL
+customMaterial.opacity = 0.0 -- Make it invisible
+
+-- Apply the custom material to the cube
+renderer.material = customMaterial
+
+-- Create a custom shader to handle transparency
+local customShader = shader(asset.builtin.shaders.VertexColorNormalMap)
+customShader.blendMode = NORMAL
+renderer.shader = customShader
+
+-- Add a rigid body for physics simulation
+cube:add(craft.rigidbody, STATIC)
+cube:add(craft.shape.box, vec3(1, 1, 1))
+end
