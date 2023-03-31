@@ -1,4 +1,69 @@
-Grid2D = class()
+
+Grid2D = class(GridIO)
+
+function Grid2D:init(gridData, cellSize)
+    GridIO.init(self, gridData, cellSize)
+    self.offsetX = (WIDTH - gridData.columns * cellSize) / 2
+    self.offsetY = (HEIGHT - gridData.rows * cellSize) / 2
+    self.cellColor = color(234, 232, 222)
+    self.cellSelectionColor = color(164, 236, 67, 144)
+end
+
+function Grid2D:draw()
+    pushMatrix()
+    pushStyle()
+    
+    translate(self.offsetX, self.offsetY)
+    self:drawCells()
+    self:updateSelectionVisuals(self:selectedCoords())
+    
+    popStyle()
+    popMatrix()
+end
+
+function Grid2D:drawCells()
+    for r = 1, self.gridData.rows do
+        for c = 1, self.gridData.columns do
+            local x = (c - 1) * self.cellSize
+            local y = (self.gridData.rows - r) * self.cellSize
+            
+            fill(self.cellColor)
+            rect(x, y, self.cellSize, self.cellSize)  
+        end
+    end
+end
+
+function Grid2D:pointToRowAndColumn(point)
+    local adjustedX = point.x - self.offsetX
+    local adjustedY = point.y - self.offsetY
+    
+    local c = math.floor(adjustedX / self.cellSize) + 1
+    local r = self.gridData.rows - math.floor(adjustedY / self.cellSize)
+    
+    -- Ensure the calculated row and column are within grid bounds
+    if adjustedX >= 0 and adjustedX <= self.gridData.columns * self.cellSize and
+    adjustedY >= 0 and adjustedY <= self.gridData.rows * self.cellSize then
+        return r, c
+    else
+        return nil, nil
+    end
+end
+
+function Grid2D:applySelectedCellEffect(row, column)
+    local x = (column - 1) * self.cellSize
+    local y = (self.gridData.rows - row) * self.cellSize
+    
+    fill(self.cellSelectionColor)
+    rect(x, y, self.cellSize, self.cellSize)
+end
+
+
+function Grid2D:clearCellSelectionEffect(cell)
+    -- This function should be overridden in subclasses (Grid2D and Grid3D)
+end
+
+
+--[[ Grid2D = class()
 
 function Grid2D:init(gridData, cellSize)
     self.gridData = gridData
@@ -14,44 +79,7 @@ function Grid2D:init(gridData, cellSize)
     self.cellColor = color(255)
 end
 
---[[
-function Grid2D:draw()
-    pushStyle()
-    rectMode(CENTER)
-    for c = 1, self.gridData.rows do
-        for r = 1, self.gridData.columns do
-            local x = (c - 1) * self.cellSize + self.offsetX
-            local y = (self.gridData.rows - r) * self.cellSize + self.offsetY          
-           
-            -- Draw the cell background
-            fill(200, 200, 200)
-            rect(x + self.cellSize / 2, y + self.cellSize / 2, self.cellSize, self.cellSize)
-            
-            local cell = self.gridData:getCell(r, c)
-            local unit = cell:getContent(Cell.contentTypes.UNIT)
-            if unit then
-                textMode(CENTER)
-                fill(0, 98, 255)
-                text(unit.icon, c * self.cellSize, r * self.cellSize)
-            end
-        end
-    end
-    
-    -- Draw the selected cell highlight
-    if self.gridData.selectedR and self.gridData.selectedC then
-        print("Selected cell: R=" .. self.gridData.selectedR .. ", C=" .. self.gridData.selectedC) -- Add this line to print the selected cell coordinates
-        local x = (self.gridData.selectedC - 1) * self.cellSize + self.offsetX
-        local y = (self.gridData.selectedR - 1) * self.cellSize + self.offsetY
-        fill(255, 255, 0, 100)
-        rect(x + self.cellSize / 2, y + self.cellSize / 2, self.cellSize, self.cellSize)
-    else
-        print("No cell selected") -- Add this line to print when no cell is selected
-    end
 
-    popStyle()
-end
-
-]]
 function Grid2D:draw()
     pushMatrix()
     pushStyle()
@@ -137,3 +165,4 @@ function Grid2D:touchEnded(touch)
         self.gridData:moveUnit(self.gridData.selectedR, self.gridData.selectedC, r, c)
     end
 end
+]]

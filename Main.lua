@@ -1,7 +1,10 @@
 -- Footprints Of The Devil
 
 function setup()
-    displayMode(OVERLAY)
+    viewer.mode = OVERLAY
+    parameter.boolean("show3D", true)
+    parameter.watch("selected")
+    
     rows = 10
     columns = 10
     cellSize = 50
@@ -14,7 +17,7 @@ function setup()
     
     gridData:addUnit(5, 5)
     scene = grid3D.scene    
-    parameter.boolean("show3D", true)
+
     -- Run the test
     -- testGridData()
 end
@@ -25,9 +28,9 @@ function draw()
         grid2D:draw()
         grid2D:touched(CurrentTouch)
     else
-        grid3D:draw()
-        grid3D:update(DeltaTime)
-    end 
+        grid3D:draw(DeltaTime)
+    end
+    selected = tostring(gridData.selectedR).." "..tostring(gridData.selectedC)
 end
 
 function touched(touch)

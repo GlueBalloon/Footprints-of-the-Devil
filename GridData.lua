@@ -24,9 +24,13 @@ function GridData:addUnit(r, c, icon, state)
     return unit
 end
 
-function GridData:coordToIndex(row, column)
-    return (row - 1) * self.columns + column
+function GridData:coordToIndex(row, col)
+    if not row or not col then
+        return nil
+    end
+    return (row - 1) * self.columns + col
 end
+
 
 function GridData:placeUnit(unit, r, c)
     self:getCell(r, c):addContent(Content.UNIT, unit)
