@@ -20,7 +20,7 @@ end
 
 function GridIO:placeUnit(unit, r, c)
     self.gridData:placeUnitData(unit, r, c)
-    self:unitPlaced(unit, r, c)
+    self:unitDataPlaced(unit, r, c)
 end
 
 function GridIO:removeUnit(r, c)
@@ -28,7 +28,7 @@ function GridIO:removeUnit(r, c)
     self:unitRemoved(unit, r, c)
 end
 
-function GridIO:unitAdded(unit, r, c)
+function GridIO:unitDataPlaced(unit, r, c)
     -- This function should be overridden in subclasses (Grid2D and Grid3D)
 end
 

@@ -25,6 +25,26 @@ function Grid3D:makeGridEntities()
             local cellEntity = self.scene:entity()
             cellEntity.position = vec3(x, 0, z)
             
+            if r == 1 then
+               -- local plane = createFourPlanesModel(2, self.scene)
+               -- plane.position = cellEntity.position
+              --  local newCube = createTransparentCube(self.cellSize * 0.9, self.scene)
+                -- newCube.position = cellEntity.position
+                -- Position the cube on the grid
+                local unitSize = self.cellSize * 0.87
+             --   newCube.position = vec3(cellEntity.position.x * self.cellSize, cellEntity.position.y * self.cellSize - size * 1.15 / 2, cellEntity.position.z * self.cellSize)
+                -- Create the transparent cube
+                local parentOfCube = createTransparentCube(unitSize, cellEntity.position, self.scene)
+                
+                -- Position the cube in the cell
+                local halfHeight = unitSize * 1.15 / 2
+                parentOfCube.position = vec3(cellEntity.position.x, cellEntity.position.y + halfHeight, cellEntity.position.z)
+                
+            end
+            if r == 2 then
+                createOpenCube(2, cellEntity.position, self.scene)
+            end
+            
             local cellModel = craft.model.cube(vec3(self.cellSize, 0.1, self.cellSize))
             cellEntity:add(craft.renderer, cellModel)
             cellEntity.material = craft.material(asset.builtin.Materials.Specular)
