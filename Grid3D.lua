@@ -2,6 +2,7 @@
 Grid3D = class(GridIO)
 
 function Grid3D:init(gridData, cellSize)
+    self.unitEntities = {}
     GridIO.init(self, gridData, cellSize)
     self.selectedCellEntity = nil
     self.cellSelectionColor = color(164, 236, 67, 144)
@@ -12,6 +13,14 @@ function Grid3D:setupGrid()
     self.scene = craft.scene()
     self:makeGridEntities()
     self:setupCamera()
+    local camera = self.scene.camera:get(craft.camera)
+    local bloom = craft.bloomEffect()
+    bloom.enabled = true
+    bloom.intensity = 0.5
+    bloom.threshold = 0.8
+    bloom.softThreshold = 0.5
+    bloom.radius = 2.0
+    camera:addPostEffect(bloom)
 end
 
 function Grid3D:makeGridEntities()
@@ -25,24 +34,14 @@ function Grid3D:makeGridEntities()
             local cellEntity = self.scene:entity()
             cellEntity.position = vec3(x, 0, z)
             
+            local unitSize = self.cellSize * 0.87
+            local halfHeight = unitSize * 1.15 / 2
+            local innerCubeSize = unitSize * 0.72
             if r == 1 then
-               -- local plane = createFourPlanesModel(2, self.scene)
-               -- plane.position = cellEntity.position
-              --  local newCube = createTransparentCube(self.cellSize * 0.9, self.scene)
-                -- newCube.position = cellEntity.position
-                -- Position the cube on the grid
-                local unitSize = self.cellSize * 0.87
-             --   newCube.position = vec3(cellEntity.position.x * self.cellSize, cellEntity.position.y * self.cellSize - size * 1.15 / 2, cellEntity.position.z * self.cellSize)
-                -- Create the transparent cube
-                local parentOfCube = createTransparentCube(unitSize, cellEntity.position, self.scene)
-                
-                -- Position the cube in the cell
-                local halfHeight = unitSize * 1.15 / 2
-                parentOfCube.position = vec3(cellEntity.position.x, cellEntity.position.y + halfHeight, cellEntity.position.z)
-                
-            end
-            if r == 2 then
-                createOpenCube(2, cellEntity.position, self.scene)
+                local openCube = createOpenCube(vec3(unitSize, unitSize * 1.15, unitSize), cellEntity.position, self.scene)
+                openCube.position = vec3(cellEntity.position.x, cellEntity.position.y + halfHeight, cellEntity.position.z)
+                self.unitEntities[#self.unitEntities + 1] = openCube
+                createInsetCube(openCube, vec3(1,1,1) * innerCubeSize, color(135, 205, 224), self.scene)            
             end
             
             local cellModel = craft.model.cube(vec3(self.cellSize, 0.1, self.cellSize))
@@ -71,14 +70,20 @@ end
 function Grid3D:draw(deltaTime)
     self.scene:draw()
     self.scene:update(deltaTime)
-    self:update()
+    self:update(deltaTime)
 end
 
-function Grid3D:update()
+function Grid3D:update(dt)
     local r, c = self:selectedCoords()
     if (r and c) then
         self:updateSelectionVisuals(r, c)
     end
+        for _, entity in pairs(self.unitEntities) do
+            local rotationSpeed = 35 -- You can adjust this value to control the rotation speed
+            local currentRotation = entity.rotation
+            local deltaRotation = quat.eulerAngles(0, rotationSpeed * dt, 0)
+            entity.rotation = currentRotation * deltaRotation
+        end
 end
 
 function Grid3D:applySelectedCellEffect(r, c)

@@ -33,3 +33,18 @@ function testGridData()
 end
 
 
+function updateOOO(dt)
+    -- Calculate the distance to the camera for each plane
+    local cameraPosition = scene.camera:get(craft.camera).entity.position
+    local distance1 = (plane1.position - cameraPosition):len()
+    local distance2 = (plane2.position - cameraPosition):len()
+    
+    -- Set the render order based on the distance
+    if distance1 > distance2 then
+        plane1:get(craft.renderer).renderOrder = 1
+        plane2:get(craft.renderer).renderOrder = 0
+    else
+        plane1:get(craft.renderer).renderOrder = 0
+        plane2:get(craft.renderer).renderOrder = 1
+    end
+end

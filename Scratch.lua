@@ -1,304 +1,25 @@
 
-
-
-
-    
 function createOpenCube(size, position, scene)
---[[
     local cube = scene:entity()
-    cube.position = position
-    local mesh = createDoubleSidedOpenCubeMesh(size)
-    cube.model = craft.model(mesh)
-    cube.material = craft.material(asset.builtin.Materials.Standard)
-    return cube
-]]
-    local cube = scene:entity()
-    cube.position = position
-    cube.model = createBoxSides(size)
-    cube.material = craft.material(asset.builtin.Materials.Standard)
-    return cube
-end
---[[
-function createDoubleSidedPlane(size)
-    local m = craft.model()
-    
-    local positions = {
-        vec3(-size / 2, -size / 2, 0),
-        vec3(-size / 2, size / 2, 0),
-        vec3(size / 2, size / 2, 0),
-        vec3(size / 2, -size / 2, 0),
-        
-        vec3(size / 2, -size / 2, 0),
-        vec3(size / 2, size / 2, 0),
-        vec3(-size / 2, size / 2, 0),
-        vec3(-size / 2, -size / 2, 0)
-    }
-    
-    local normals = {
-        vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1),
-        vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1)
-    }
-    
-    local uvs = {
-        vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0),
-        vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0)
-    }
-    
-    local colors = {}
-    local c = color(255, 255, 255, 255)
-    for i = 1, 8 do
-        table.insert(colors, c)
-    end
-    
-    local indices = {1, 2, 3, 1, 3, 4, 5, 6, 7, 5, 7, 8}
-    
-    m.positions = positions
-    m.normals = normals
-    m.uvs = uvs
-    m.colors = colors
-    m.indices = indices
-    
-    return m
-end
-
-    
-function createPlane(scene)
-    local planeEntity = scene:entity()
-    planeEntity.position = vec3(0, 0, 0)
-    
-    local planeModel = craft.model.plane(vec2(1, 1))
-    planeEntity:add(craft.renderer, planeModel)
-    planeEntity.material = craft.material(asset.builtin.Materials.Specular)
-    planeEntity.material.diffuse = color(255, 255, 255)
-    return planeEntity
-end
-    
-function createFourPlanesModel(cellSize, scene)
-    
-    local cellEntity = scene:entity()
-    cellEntity.position = vec3(1, 0, 1)
-    
-    local planeModel = craft.model.plane(vec2(cellSize, cellSize))
-    
-    -- Create four planes
-    local planes = {}
-    for i = 1, 4 do
-        local plane = scene:entity()
-        plane:add(craft.renderer, planeModel)
-        plane.material = craft.material(asset.builtin.Materials.Specular)
-        plane.material.diffuse = color(255, 255, 255)
-        plane.parent = cellEntity
-        planes[i] = plane
-    end
-    
-    -- Rotate and position planes to create vertical faces
-    planes[1].rotation = quat.eulerAngles(0, 90, 0) -- Right
-    planes[2].rotation = quat.eulerAngles(0, -90, 0) -- Left
-    planes[3].rotation = quat.eulerAngles(0, 0, 0) -- Front
-    planes[4].rotation = quat.eulerAngles(0, 180, 0) -- Back
-    
-    return cellEntity
-end
-
-
-
-
--- Custom transparent cube
-function createTransparentCube(position, scene)
-    local cube = scene:entity()
-    cube.position = position
-    
-    local model = craft.model.cube(vec3(1, 1, 1))
-    -- local model = createVerticalFacesModel()
-    local renderer = cube:add(craft.renderer, model)
-    
-    -- Load custom texture (replace with your own texture asset)
-    local customTexture = readImage(asset.builtin.SpaceCute.Background)
-    
-    -- Create a custom material
+    local model = createBoxSides(size)
+    local customTexture = readImage(asset.builtin.SpaceCute.Beetle_Ship)
     local customMaterial = craft.material(asset.builtin.Materials.Standard)
     customMaterial.map = customTexture
     customMaterial.blendMode = NORMAL
     customMaterial.opacity = 1.0
+    --customMaterial.depthWrite = false
+    --customMaterial.depthMode = LEQUAL
+    --[[
+    local customShader = shader(asset.builtin.Materials.Basic)
+    customShader.blendMode = NORMAL
+    ]]
     
-    -- Apply the custom material to the cube
+    local renderer = cube:add(craft.renderer, model)
+    --renderer.shader = customShader
     renderer.material = customMaterial
     
-    -- Create a custom shader to handle transparency
-    local customShader = shader(asset.builtin.Materials.Basic)
-    customShader.blendMode = NORMAL
-    renderer.shader = customShader
-    
-    -- Add a rigid body for physics simulation
-    cube:add(craft.rigidbody, STATIC)
-    cube:add(craft.shape.box, vec3(1, 1, 1))
-end
-
-]]
--- Custom transparent cube
-function createTransparentCube(size, position, scene)
-    
-    -- Create a custom material
-    local customTexture = readImage(asset.builtin.SpaceCute.Beetle_Ship)
-    local customMaterial = craft.material(asset.builtin.Materials.Standard)
-    customMaterial.map = customTexture
-    customMaterial.blendMode = NORMAL
-    customMaterial.opacity = 1.0
-
-    -- Create a custom shader to handle transparency
-    local customShader = shader(asset.builtin.Materials.Basic)
-    customShader.blendMode = NORMAL
-    
-    local planes = {}
-    local parentOfCube = scene:entity()
-    local halfSize = 0.5 -- half the size of the cube's side length
-    for i = 1, 4 do
-        local planeEntity = scene:entity()
-        local model = craft.model.plane(vec2(1, 1.15))
-        local renderer = planeEntity:add(craft.renderer, model)
-        renderer.shader = customShader
-        renderer.material = customMaterial
-        planeEntity.parent = parentOfCube
-        planes[i] = planeEntity
-    end
-    
-    parentOfCube.position = position
-    
-    -- Position and rotation adjustments
-    planes[1].position = vec3(0, 0, -halfSize) -- Back
-    planes[1].rotation = quat.eulerAngles(-90, 0, 0)
-    
-    planes[2].position = vec3(-halfSize, 0, 0) -- Right
-    planes[2].rotation = quat.eulerAngles(-90, 90, 0)
-    
-    planes[3].position = vec3(0, 0, halfSize) -- Front
-    planes[3].rotation = quat.eulerAngles(-90, 180, 0)
-    
-    planes[4].position = vec3(halfSize, 0, 0) -- Left
-    planes[4].rotation = quat.eulerAngles(-90, 270, 0)
-      
-end
-
-
-
---[[
--- Custom transparent cube
-function createTransparentCube(position, scene)
-    local cube = scene:entity()
     cube.position = position
-    
-    local model = createVerticalFacesModel()
-    local renderer = cube:add(craft.renderer, model)
-    
-    -- Load custom texture (replace with your own texture asset)
-    local customTexture = readImage(asset.builtin.SpaceCute.Background)
-    
-    -- Create a custom material
-    local customMaterial = craft.material(asset.builtin.Materials.Standard)
-    customMaterial.map = customTexture
-    customMaterial.blendMode = NORMAL
-    customMaterial.opacity = 1.0
-    
-    -- Apply the custom material to the cube
-   -- renderer.material = customMaterial
-    
-    -- Add a rigid body for physics simulation
-    cube:add(craft.rigidbody, STATIC)
-    cube:add(craft.shape.box, vec3(1, 1, 1))
-end
-]]
-
-function planeModelWithTextureRightSideUp(size)
-    local vertices = {
-        vec3(-0.5 * size.x, 0, -0.5 * size.y),
-        vec3(0.5 * size.x, 0, -0.5 * size.y),
-        vec3(-0.5 * size.x, 0, 0.5 * size.y),
-        vec3(0.5 * size.x, 0, 0.5 * size.y)
-    }
-    
-    local texCoords = {
-        vec2(0, 1),
-        vec2(1, 1),
-        vec2(0, 0),
-        vec2(1, 0)
-    }
-    
-    local indices = {1, 2, 3, 3, 2, 4}
-    
-    local m = craft.model()
-    m.positions = vertices
-    m.texCoords = texCoords
-    m.indices = indices
-    
-    return m
-end
-
-
--- Custom craft model with only vertical faces
-function createVerticalFacesModel()
-    local vertices = {
-        vec3(-0.5, -0.5, 0.5), vec3(0.5, -0.5, 0.5), vec3(0.5, 0.5, 0.5), vec3(-0.5, 0.5, 0.5),
-        vec3(-0.5, -0.5, -0.5), vec3(0.5, -0.5, -0.5), vec3(0.5, 0.5, -0.5), vec3(-0.5, 0.5, -0.5)
-    }
-    local texCoords = {
-        vec2(0, 1), vec2(1, 1), vec2(1, 0), vec2(0, 0)
-    }
-    local indices = {
-        1, 2, 3, 1, 3, 4, -- Front face
-        5, 6, 7, 5, 7, 8, -- Back face
-        1, 5, 8, 1, 8, 4, -- Left face
-        2, 6, 7, 2, 7, 3  -- Right face
-    }
-    
-    local m = craft.model()
-    m.positions = vertices
-    m.uvs = texCoords
-    m.indices = indices
-    
-    return m
-end
-
-function createTransparentCube(size, scene)
-    
-    -- Create a custom material
-    local customTexture = readImage(asset.builtin.SpaceCute.Beetle_Ship)
-    local customMaterial = craft.material(asset.builtin.Materials.Standard)
-    customMaterial.map = customTexture
-    customMaterial.blendMode = NORMAL
-    customMaterial.opacity = 1.0
-    
-    -- Create a custom shader to handle transparency
-    local customShader = shader(asset.builtin.Materials.Basic)
-    customShader.blendMode = NORMAL
-    
-    local planes = {}
-    local parentOfCube = scene:entity()
-    local halfSize = size / 2
-    for i = 1, 4 do
-        local planeEntity = scene:entity()
-        local model = craft.model.plane(vec2(size, size * 1.15))
-        local renderer = planeEntity:add(craft.renderer, model)
-        renderer.shader = customShader
-        renderer.material = customMaterial
-        renderer.renderQueue = OPAQUE
-        planeEntity.parent = parentOfCube
-        planes[i] = planeEntity
-    end
-    
-    -- Position and rotation adjustments
-    planes[1].position = vec3(0, 0, -halfSize) -- Back
-    planes[1].rotation = quat.eulerAngles(-90, 0, 0)
-    
-    planes[2].position = vec3(-halfSize, 0, 0) -- Right
-    planes[2].rotation = quat.eulerAngles(-90, 90, 0)
-    
-    planes[3].position = vec3(0, 0, halfSize) -- Front
-    planes[3].rotation = quat.eulerAngles(-90, 180, 0)
-    
-    planes[4].position = vec3(halfSize, 0, 0) -- Left
-    planes[4].rotation = quat.eulerAngles(-90, 270, 0)
-    
-    return parentOfCube
+    return cube
 end
 
 function createTransparentCube(size, position, scene)
@@ -348,7 +69,59 @@ end
 function createBoxSides(size)
     local m = craft.model()
     
+
+        local halfWidth = size.x / 2
+        local halfHeight = size.y / 2
+        local halfDepth = size.z / 2
+        local epsilon = 0.001
+        
+    --[[
+        positions = {
+            -- Back
+            vec3(-halfWidth, -halfHeight, -halfDepth - epsilon),
+            vec3(-halfWidth, halfHeight, -halfDepth - epsilon),
+            vec3(halfWidth, halfHeight, -halfDepth - epsilon),
+            vec3(halfWidth, -halfHeight, -halfDepth - epsilon),
+            vec3(-halfWidth, -halfHeight, -halfDepth),
+            vec3(-halfWidth, halfHeight, -halfDepth),
+            vec3(halfWidth, halfHeight, -halfDepth),
+            vec3(halfWidth, -halfHeight, -halfDepth),
+            
+            -- Right
+            vec3(-halfWidth - epsilon, -halfHeight, -halfDepth),
+            vec3(-halfWidth - epsilon, halfHeight, -halfDepth),
+            vec3(-halfWidth - epsilon, halfHeight, halfDepth),
+            vec3(-halfWidth - epsilon, -halfHeight, halfDepth),
+            vec3(-halfWidth, -halfHeight, -halfDepth),
+            vec3(-halfWidth, halfHeight, -halfDepth),
+            vec3(-halfWidth, halfHeight, halfDepth),
+            vec3(-halfWidth, -halfHeight, halfDepth),
+            
+            -- Front
+            vec3(-halfWidth, -halfHeight, halfDepth + epsilon),
+            vec3(-halfWidth, halfHeight, halfDepth + epsilon),
+            vec3(halfWidth, halfHeight, halfDepth + epsilon),
+            vec3(halfWidth, -halfHeight, halfDepth + epsilon),
+            vec3(-halfWidth, -halfHeight, halfDepth),
+            vec3(-halfWidth, halfHeight, halfDepth),
+            vec3(halfWidth, halfHeight, halfDepth),
+            vec3(halfWidth, -halfHeight, halfDepth),
+            
+            -- Left
+            vec3(halfWidth + epsilon, -halfHeight, -halfDepth),
+            vec3(halfWidth + epsilon, halfHeight, -halfDepth),
+            vec3(halfWidth + epsilon, halfHeight, halfDepth),
+            vec3(halfWidth + epsilon, -halfHeight, halfDepth),
+            vec3(halfWidth, -halfHeight, -halfDepth),
+            vec3(halfWidth, halfHeight, -halfDepth),
+            vec3(halfWidth, halfHeight, halfDepth),
+            vec3(halfWidth, -halfHeight, halfDepth)
+        }
+    ]]
+    
     -- Generate positions, normals, and UVs for the four double-sided planes
+
+--[[
     local halfSize = size * 0.5
     local positions = {
         -- Front
@@ -398,6 +171,28 @@ function createBoxSides(size)
         vec3(-halfSize, halfSize, -halfSize),
         vec3(halfSize, halfSize, -halfSize),
         vec3(halfSize, -halfSize, -halfSize)
+    }
+]]
+
+    local w, h, d = size.x, size.y, size.z
+    local halfW, halfH, halfD = w / 2, h / 2, d / 2
+    
+    positions = {
+        -- Back plane
+        vec3(-halfW, -halfH, -halfD), vec3(-halfW, halfH, -halfD), vec3(halfW, halfH, -halfD), vec3(halfW, -halfH, -halfD),
+        vec3(halfW, -halfH, -halfD), vec3(halfW, halfH, -halfD), vec3(-halfW, halfH, -halfD), vec3(-halfW, -halfH, -halfD),
+        
+        -- Right plane
+        vec3(halfW, -halfH, -halfD), vec3(halfW, halfH, -halfD), vec3(halfW, halfH, halfD), vec3(halfW, -halfH, halfD),
+        vec3(halfW, -halfH, halfD), vec3(halfW, halfH, halfD), vec3(halfW, halfH, -halfD), vec3(halfW, -halfH, -halfD),
+        
+        -- Front plane
+        vec3(halfW, -halfH, halfD), vec3(halfW, halfH, halfD), vec3(-halfW, halfH, halfD), vec3(-halfW, -halfH, halfD),
+        vec3(-halfW, -halfH, halfD), vec3(-halfW, halfH, halfD), vec3(halfW, halfH, halfD), vec3(halfW, -halfH, halfD),
+        
+        -- Left plane
+        vec3(-halfW, -halfH, halfD), vec3(-halfW, halfH, halfD), vec3(-halfW, halfH, -halfD), vec3(-halfW, -halfH, -halfD),
+        vec3(-halfW, -halfH, -halfD), vec3(-halfW, halfH, -halfD), vec3(-halfW, halfH, halfD), vec3(-halfW, -halfH, halfD)
     }
     
     local normals = {
@@ -466,104 +261,15 @@ function createBoxSides(size)
     return m
 end
 
-function generatePositions(size)
-    local halfSize = size * 0.5
-    local positions = {
-        -- Front
-        vec3(-halfSize, -halfSize, halfSize),
-        vec3(-halfSize, halfSize, halfSize),
-        vec3(halfSize, halfSize, halfSize),
-        vec3(halfSize, -halfSize, halfSize),
-        
-        -- Front (backface)
-        vec3(halfSize, -halfSize, halfSize),
-        vec3(halfSize, halfSize, halfSize),
-        vec3(-halfSize, halfSize, halfSize),
-        vec3(-halfSize, -halfSize, halfSize),
-        
-        -- Right
-        vec3(halfSize, -halfSize, halfSize),
-        vec3(halfSize, halfSize, halfSize),
-        vec3(halfSize, halfSize, -halfSize),
-        vec3(halfSize, -halfSize, -halfSize),
-        
-        -- Right (backface)
-        vec3(halfSize, -halfSize, -halfSize),
-        vec3(halfSize, halfSize, -halfSize),
-        vec3(halfSize, halfSize, halfSize),
-        vec3(halfSize, -halfSize, halfSize),
-        
-        -- Left
-        vec3(-halfSize, -halfSize, -halfSize),
-        vec3(-halfSize, halfSize, -halfSize),
-        vec3(-halfSize, halfSize, halfSize),
-        vec3(-halfSize, -halfSize, halfSize),
-        
-        -- Left (backface)
-        vec3(-halfSize, -halfSize, halfSize),
-        vec3(-halfSize, halfSize, halfSize),
-        vec3(-halfSize, halfSize, -halfSize),
-        vec3(-halfSize, -halfSize, -halfSize),
-        
-        -- Back
-        vec3(halfSize, -halfSize, -halfSize),
-        vec3(halfSize, halfSize, -halfSize),
-        vec3(-halfSize, halfSize, -halfSize),
-        vec3(-halfSize, -halfSize, -halfSize),
-        
-        -- Back (backface)
-        vec3(-halfSize, -halfSize, -halfSize),
-        vec3(-halfSize, halfSize, -halfSize),
-        vec3(halfSize, halfSize, -halfSize),
-        vec3(halfSize, -halfSize, -halfSize)
-    }
-    
-    return positions
+-- Add this new function below the createOpenCube function
+function createInsetCube(parentEntity, size, cubeColor, scene)
+    local cubeEntity = scene:entity()
+    local model = craft.model.cube(size)
+    local renderer = cubeEntity:add(craft.renderer, model)
+    renderer.material = craft.material(asset.builtin.Materials.Standard)
+    renderer.material.diffuse = cubeColor
+    renderer.material.emissive = cubeColor * 0.2 -- Make the cube slightly glowing
+    cubeEntity.parent = parentEntity
+    return cubeEntity
 end
 
-        
-        function generateNormals()
-            local normals = {
-                -- Right
-                vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0),
-                vec3(-1, 0, 0), vec3(-1, 0, 0), vec3(-1, 0, 0), vec3(-1, 0, 0),
-                
-                -- Left
-                vec3(-1, 0, 0), vec3(-1, 0, 0), vec3(-1, 0, 0), vec3(-1, 0, 0),
-                vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0), vec3(1, 0, 0),
-                
-                -- Front
-                vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1),
-                vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1),
-                
-                -- Back
-                vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1), vec3(0, 0, -1),
-                vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1), vec3(0, 0, 1)
-            }
-            
-            return normals
-        end
-        
-        function generateUVs()
-            local uvs = {
-                -- Right
-                vec2(1, 0), vec2(1, 1), vec2(0, 1), vec2(0, 0),
-                vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0),
-                
-                -- Left
-                vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0),
-                vec2(1, 0), vec2(1, 1), vec2(0, 1), vec2(0, 0),
-                
-                -- Front
-                vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0),
-                vec2(1, 0), vec2(1, 1), vec2(0, 1), vec2(0, 0),
-                
-                -- Back
-                vec2(1, 0), vec2(1, 1), vec2(0, 1), vec2(0, 0),
-                vec2(0, 0), vec2(0, 1), vec2(1, 1), vec2(1, 0)
-            }
-            
-            return uvs
-        end
-        
-        
