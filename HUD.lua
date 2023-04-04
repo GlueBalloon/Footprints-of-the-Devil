@@ -17,7 +17,7 @@ end
 
 function InGameUI:drawUnit(unit)
     -- Draw the unit on the map (assuming map coordinates are in pixels)
-    sprite("Unit" .. unit.type, unit.x * 32, unit.y * 32, 32, 32)
+    sprite(asset.builtin.SpaceCute.Beetle_Ship, unit.x * 32, unit.y * 32, 32, 32)
 end
 
 function InGameUI:drawSelectedUnitInfo(unit)

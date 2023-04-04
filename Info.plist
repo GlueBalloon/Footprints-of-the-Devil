@@ -5,15 +5,6 @@
 	<key>Buffer Order</key>
 	<array>
 		<string>Main</string>
-		<string>GridData</string>
-		<string>GridIO</string>
-		<string>Grid2D</string>
-		<string>Grid3D</string>
-		<string>Scratch</string>
-		<string>Unit</string>
-		<string>Cell</string>
-		<string>Tests</string>
-		<string>PostMain</string>
 		<string>MainMenu</string>
 		<string>TurnSystem</string>
 		<string>HUD</string>
