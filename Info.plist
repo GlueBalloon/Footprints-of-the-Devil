@@ -13,6 +13,11 @@
 		<string>Unit</string>
 		<string>Cell</string>
 		<string>Tests</string>
+		<string>PostMain</string>
+		<string>MainMenu</string>
+		<string>TurnSystem</string>
+		<string>HUD</string>
+		<string>Units</string>
 	</array>
 	<key>Dependencies</key>
 	<array>

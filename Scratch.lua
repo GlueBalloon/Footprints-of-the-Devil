@@ -17,7 +17,8 @@ function createOpenCube(size, position, scene)
     local renderer = cube:add(craft.renderer, model)
     --renderer.shader = customShader
     renderer.material = customMaterial
-    
+    local innerCubeSize = size * 0.72
+    createInsetCube(cube, innerCubeSize, color(135, 205, 224), scene)            
     cube.position = position
     return cube
 end

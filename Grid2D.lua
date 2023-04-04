@@ -10,20 +10,14 @@ function Grid2D:init(gridData, cellSize)
     self.defaultCellImage = readImage(asset.builtin.Blocks.Trunk_White_Top)
 end
 
-function Grid2D:draw()
+function Grid2D:preUpdatePushStyles()
     pushMatrix()
     pushStyle()
-    
     translate(self.offsetX, self.offsetY)
-    self:drawCells()
-    self:updateSelectionVisuals(self:selectedCoords())
-    self:drawUnits()
-    
-    popStyle()
-    popMatrix()
 end
 
-function Grid2D:drawCells()
+function Grid2D:updateCells()
+    self:preUpdatePushStyles()
     for r = 1, self.gridData.rows do
         for c = 1, self.gridData.columns do
             local x = (c - 1) * self.cellSize
@@ -35,9 +29,13 @@ function Grid2D:drawCells()
             sprite(readImage(asset.builtin.Blocks.Trunk_White_Top), x, y, self.cellSize)
         end
     end
+    self:updateSelectionVisuals(self:selectedCoords())
+    popStyle()
+    popMatrix()
 end
 
-function Grid2D:drawUnits()
+function Grid2D:updateUnits()
+    self:preUpdatePushStyles()
     for r = 1, self.gridData.rows do
         for c = 1, self.gridData.columns do
             local cell = self.gridData:getCell(r, c)
@@ -49,6 +47,8 @@ function Grid2D:drawUnits()
             end
         end
     end
+    popStyle()
+    popMatrix()
 end
 
 function Grid2D:drawUnitIcon(icon, x, y, width, height)

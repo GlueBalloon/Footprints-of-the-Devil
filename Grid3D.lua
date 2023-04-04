@@ -41,7 +41,6 @@ function Grid3D:makeGridEntities()
                 local openCube = createOpenCube(vec3(unitSize, unitSize * 1.15, unitSize), cellEntity.position, self.scene)
                 openCube.position = vec3(cellEntity.position.x, cellEntity.position.y + halfHeight, cellEntity.position.z)
                 self.unitEntities[#self.unitEntities + 1] = openCube
-                createInsetCube(openCube, vec3(1,1,1) * innerCubeSize, color(135, 205, 224), self.scene)            
             end
             
             local cellModel = craft.model.cube(vec3(self.cellSize, 0.1, self.cellSize))
@@ -67,13 +66,13 @@ function Grid3D:setupCamera()
     self.orbitViewer.rx, self.orbitViewer.ry = 45, 0
 end
 
-function Grid3D:draw(deltaTime)
-    self.scene:draw()
-    self.scene:update(deltaTime)
-    self:update(deltaTime)
+function Grid3D:updateUnits(deltaTime)
+    
 end
 
-function Grid3D:update(dt)
+function Grid3D:updateCells(deltaTime)
+    self.scene:draw()
+    self.scene:update(deltaTime)
     local r, c = self:selectedCoords()
     if (r and c) then
         self:updateSelectionVisuals(r, c)
@@ -81,7 +80,7 @@ function Grid3D:update(dt)
         for _, entity in pairs(self.unitEntities) do
             local rotationSpeed = 35 -- You can adjust this value to control the rotation speed
             local currentRotation = entity.rotation
-            local deltaRotation = quat.eulerAngles(0, rotationSpeed * dt, 0)
+        local deltaRotation = quat.eulerAngles(0, rotationSpeed * deltaTime, 0)
             entity.rotation = currentRotation * deltaRotation
         end
 end

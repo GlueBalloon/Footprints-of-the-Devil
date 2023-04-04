@@ -18,6 +18,12 @@ function GridIO:setupGrid()
     -- This function should be overridden in subclasses
 end
 
+function GridIO:draw(deltaTime)
+    assert(deltaTime, "must pass delta time to GridIO:draw(deltaTime)")
+    self:updateCells(deltaTime)
+    self:updateUnits(deltaTime)
+end
+
 function GridIO:placeUnit(unit, r, c)
     self.gridData:placeUnitData(unit, r, c)
     self:unitDataPlaced(unit, r, c)
