@@ -11,7 +11,7 @@
 		<string>Game</string>
 		<string>TurnSystem</string>
 		<string>InGameUI</string>
-		<string>Unit</string>
+		<string>Unit_and_Manager</string>
 		<string>SaveManager</string>
 		<string>Map</string>
 		<string>AIPlayer</string>

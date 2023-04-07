@@ -3,7 +3,6 @@ Unit = class()
 
 -- Unit Class
 function Unit:init(team, strength, x, y, aColor)
-    local map = game.map
     self.team = team
     self.strength = strength
     self.x = x
@@ -84,8 +83,8 @@ function UnitManager:init()
     self.units = {}
 end
 
-function UnitManager:createUnit(team, strength, x, y, color)
-    local unit = Unit(team, strength, x, y, color)
+function UnitManager:createUnit(team, strength, x, y, aColor)
+    local unit = Unit(team, strength, x, y, aColor)
     table.insert(self.units, unit)
 end
 

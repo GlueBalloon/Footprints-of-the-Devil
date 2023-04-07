@@ -27,7 +27,7 @@ function Map:init()
     self.offsetXNoise = math.random(0, 10000)
     self.offsetYNoise = math.random(0, 10000)
     local noiseMagnifier = math.random(65, 130) * 0.01
-    print(noiseMagnifier)
+   -- print(noiseMagnifier)
     self.noiseScale = 0.0075 * noiseMagnifier
     for i = 1, self.gridSize do
         self.smallCellColors[i] = {}
@@ -83,7 +83,7 @@ function Map:init(x, y, width, height, cellsPerSide)
     self.offsetXNoise = math.random(0, 10000)
     self.offsetYNoise = math.random(0, 10000)
     local noiseMagnifier = math.random(65, 130) * 0.01
-    print(noiseMagnifier)
+  --  print(noiseMagnifier)
     self.noiseScale = 0.0075 * noiseMagnifier
     for i = 1, self.gridSize do
         self.smallCellColors[i] = {}
@@ -173,6 +173,12 @@ function Map:pointToCellRowAndColumn(x, y)
     end
     
     return row, col
+end
+
+function Map:cellRowAndColumnToPoint(row, col)
+    local x = self.offsetX + (col - 1) * self.cellSize
+    local y = self.offsetY + (row - 1) * self.cellSize
+    return x, y
 end
 
 function Map:randomColorBetweenBeigeAndRust()

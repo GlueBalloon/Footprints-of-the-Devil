@@ -24,7 +24,7 @@ function InGameUI:drawUnit(unit)
     local row, column = self.map:pointToCellRowAndColumn(unit.x, unit.y)
     
     if (not row) or (not column) then
-        print(unit.x)
+        print("not row or column ", row, column, unit.x, unit.y)
         return
     end
 
@@ -87,14 +87,15 @@ function InGameUI:highlightAvailableMoves(unit)
         {row = row, col = column + 1}
     }
     
+    local inset = self.map.cellSize * 0.1
     for _, cell in ipairs(adjacentCells) do
         -- Check if the cell coordinates are within the map grid bounds
         if cell.row >= 1 and cell.row <= self.map.gridSize and cell.col >= 1 and cell.col <= self.map.gridSize then
-            local x = self.map.offsetX + (cell.col - 1) * self.map.cellSize
-            local y = self.map.offsetY + (cell.row - 1) * self.map.cellSize
+            local x = self.map.offsetX + (cell.col - 1) * self.map.cellSize + inset
+            local y = self.map.offsetY + (cell.row - 1) * self.map.cellSize + inset
             pushStyle()
-            fill(unit.color.r, unit.color.g, unit.color.b, 80)
-            rect(x, y, self.map.cellSize, self.map.cellSize)
+            fill(unit.color.r, unit.color.g, unit.color.b, 96)
+            rect(x, y, self.map.cellSize - (inset * 2), self.map.cellSize - (inset * 2))
             popStyle()
         end
     end
@@ -124,6 +125,28 @@ function InGameUI:isValidMove(unit, row, col)
     
     return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
 end
+
+function InGameUI:isValidMove(unit, row, col, units)
+    local currentRow, currentCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local rowDelta = math.abs(row - currentRow)
+    local colDelta = math.abs(col - currentCol)
+    
+    local isAdjacent = (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
+    
+    if not isAdjacent then
+        return false
+    end
+    
+    for _, otherUnit in ipairs(units) do
+        local otherUnitRow, otherUnitCol = self.map:pointToCellRowAndColumn(otherUnit.x, otherUnit.y)
+        if row == otherUnitRow and col == otherUnitCol then
+            return false
+        end
+    end
+    
+    return true
+end
+
 
 function InGameUI:selectUnit(units, x, y)
     if not units then

@@ -6,7 +6,7 @@ function Game:init()
     self.gameState = "inGame"
     local cellsPerSide = 12
     local sideSize = (math.min(WIDTH, HEIGHT)) * 0.8
-    local mapX, mapY = 200, 20
+    local mapX, mapY = 300, 100
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens")
     local aiPlayer = AIPlayer(2, "neanderthal")
@@ -15,6 +15,7 @@ function Game:init()
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
     self.saveManager = SaveManager()
+    self.unitManager.units = self:generateRandomUnits(5, 5)   
 end
 
 function Game:update()
@@ -69,3 +70,46 @@ function Game:loadGame(slot)
         self.unitManager:deserializeUnits(saveData.units)
     end
 end
+
+function Game:generateRandomUnits(sapiensCount, neanderthalCount)
+    local units = {}
+    local row, col, unitX, unitY
+    
+    for i = 1, sapiensCount do
+        while true do
+            row = math.random(2, self.map.gridSize - 2)
+            col = math.random(2, math.floor(self.map.gridSize / 2) - 2)
+            if not self:isCellOccupied(units, row, col) then
+                break
+            end
+        end
+        unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
+        table.insert(units, Unit("sapiens", 5, unitX, unitY, color(143, 236, 67, 226)))
+    end
+    
+    for i = 1, neanderthalCount do
+        while true do
+            row = math.random(3, self.map.gridSize - 1)
+            col = math.random(math.ceil(self.map.gridSize / 2) + 2, self.map.gridSize - 1)
+            if not self:isCellOccupied(units, row, col) then
+                break
+            end
+        end
+        unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
+        table.insert(units, Unit("neanderthal", 7, unitX, unitY, color(236, 67, 143, 222)))
+    end
+    
+    return units
+end
+
+function Game:isCellOccupied(units, row, col)
+    for _, unit in ipairs(units) do
+        local unitRow, unitCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+        if row == unitRow and col == unitCol then
+            return true
+        end
+    end
+    return false
+end
+
+
