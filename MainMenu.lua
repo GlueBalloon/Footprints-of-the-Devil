@@ -3,6 +3,7 @@ MainMenu = class()
 function MainMenu:init()
     self.options = {"Start New Game", "Load Saved Game"}
     self.selectedOption = 1
+    self.saveManager = SaveManager()
 end
 
 function MainMenu:draw()
@@ -32,10 +33,16 @@ end
 
 function MainMenu:startNewGame()
     print("Starting a new game...")
+    -- Save the current game state before starting a new game
+    local gameData = game:serialize()
+    saveManager:saveGame(gameData)
     -- Implement your logic for starting a new game here
 end
 
 function MainMenu:loadSavedGame()
     print("Loading a saved game...")
-    -- Implement your logic for loading a saved game here
+    local gameData = saveManager:loadGame()
+    if gameData then
+        game:deserialize(gameData)
+    end
 end

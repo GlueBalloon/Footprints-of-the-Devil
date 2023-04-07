@@ -4,11 +4,16 @@
 <dict>
 	<key>Buffer Order</key>
 	<array>
+		<string>Scratch</string>
 		<string>Main</string>
 		<string>MainMenu</string>
+		<string>Game</string>
 		<string>TurnSystem</string>
-		<string>HUD</string>
-		<string>Units</string>
+		<string>InGameUI</string>
+		<string>Unit</string>
+		<string>SaveManager</string>
+		<string>Map</string>
+		<string>AIPlayer</string>
 	</array>
 	<key>Dependencies</key>
 	<array>
