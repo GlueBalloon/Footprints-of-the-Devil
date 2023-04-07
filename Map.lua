@@ -13,8 +13,14 @@ function Map:init()
     self.fakePixelsPerSide = 3
     self.smallCellSize = self.cellSize / self.fakePixelsPerSide -- Calculate the size of the smaller rects
     
-    -- Create a table to store cell colors for smaller rects
+
+    
     self.smallCellColors = {}
+    local noiseScale = 0.975
+    local noiseMaker = craft.noise.perlin()
+    
+
+    local offset = 200
     for i = 1, self.gridSize do
         self.smallCellColors[i] = {}
         for j = 1, self.gridSize do
@@ -22,11 +28,77 @@ function Map:init()
             for k = 1, self.fakePixelsPerSide do
                 self.smallCellColors[i][j][k] = {}
                 for l = 1, self.fakePixelsPerSide do
-                    self.smallCellColors[i][j][k][l] = self:randomColorBetweenBeigeAndRust()
+                    local noiseValue = noiseMaker:getValue(
+                    (i * noiseScale) + (l * offset),
+                    (j * noiseScale) + (l * offset),
+                    (k * noiseScale) + (l * offset)
+                    )
+                    local t = (noiseValue + 1) / 2 -- Normalize the noise value to [0, 1]
+                    self.smallCellColors[i][j][k][l] = self:lerpColorBeigeToRust(t)
                 end
             end
         end
     end
+
+    rectWidth = 360
+    rectHeight = 360
+    rectX = (WIDTH - rectWidth) / 2
+    rectY = (HEIGHT - rectHeight) / 2
+    perlinNoise = craft.noise.perlin()
+    offsetX = math.random(0, 10000)
+    offsetY = math.random(0, 10000)
+    
+    self.perlinNoise = craft.noise.perlin()
+    self.offsetXNoise = math.random(0, 10000)
+    self.offsetYNoise = math.random(0, 10000)
+    
+    local noiseScale = 0.01
+    for i = 1, self.gridSize do
+        self.smallCellColors[i] = {}
+        for j = 1, self.gridSize do
+            self.smallCellColors[i][j] = {}
+            for k = 1, self.fakePixelsPerSide do
+                self.smallCellColors[i][j][k] = {}
+                for l = 1, self.fakePixelsPerSide do
+                    local noiseValue = self.perlinNoise:getValue(
+                    (self.offsetX + (i - 1) * self.cellSize + (k - 1) * self.smallCellSize + self.offsetXNoise) * noiseScale, 
+                    (self.offsetY + (j - 1) * self.cellSize + (l - 1) * self.smallCellSize + self.offsetYNoise) * noiseScale, 
+                    0
+                    )
+                    self.smallCellColors[i][j][k][l] = self:lerpColorBeigeToRust(noiseValue)
+                end
+            end
+        end
+    end
+end
+
+function Map:drawPerlinNoisePattern(x, y, width, height, squareSize, noiseGenerator)
+    local scaleFactor = 0.01 -- Controls the "zoom" level of the noise
+    for i = x, x + width, squareSize do
+        for j = y, y + height, squareSize do
+            local noiseValue = noiseGenerator:getValue((i + self.offsetXNoise) * scaleFactor, (j + self.offsetYNoise) * scaleFactor, 0)
+            fill(Map:lerpColorBeigeToRust(noiseValue))
+            rect(i, j, squareSize, squareSize)
+        end
+    end
+end
+
+
+
+function Map:lerpColorBeigeToRust(t)
+    function lerp(a, b, t)
+        return a + (b - a) * t
+    end
+    local beige = color(245, 222, 179)
+    local rust = color(183, 65, 14)
+ --local beige = color(245, 245, 220)
+ --   local rust = color(226, 190, 165)
+    local rust = color(226, 150, 117)
+    local r = lerp(beige.r, rust.r, t)
+    local g = lerp(beige.g, rust.g, t)
+    local b = lerp(beige.b, rust.b, t)
+    local returnColor = color(r, g, b)
+    return returnColor
 end
 
 function Map:update()
@@ -43,7 +115,7 @@ function Map:draw()
             for k = 1, self.fakePixelsPerSide do
                 for l = 1, self.fakePixelsPerSide do
                     local smallCellColor = self.smallCellColors[i][j][k][l]
-                    fill(smallCellColor[1] * 255, smallCellColor[2] * 255, smallCellColor[3] * 255)
+                    fill(smallCellColor)
                     rect(self.offsetX + (i - 1) * self.cellSize + (k - 1) * self.smallCellSize,
                     self.offsetY + (j - 1) * self.cellSize + (l - 1) * self.smallCellSize,
                     self.smallCellSize + 2, self.smallCellSize + 2)
@@ -60,6 +132,7 @@ function Map:draw()
         line(self.offsetX, self.offsetY + i * self.cellSize, self.offsetX + self.gridSize * self.cellSize, self.offsetY + i * self.cellSize)
     end
     popStyle()
+   self: drawPerlinNoisePattern(rectX, rectY, rectWidth, rectHeight, 10, self.perlinNoise)
 end
 
 
