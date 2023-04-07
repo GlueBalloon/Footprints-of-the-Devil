@@ -4,9 +4,9 @@ Game = class()
 
 function Game:init()
     self.gameState = "inGame"
-    local cellsPerSide = 12
-    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.8
-    local mapX, mapY = 300, 100
+    local cellsPerSide = 10
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.87
+    local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens")
     local aiPlayer = AIPlayer(2, "neanderthal")
@@ -77,26 +77,28 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
     
     for i = 1, sapiensCount do
         while true do
-            row = math.random(2, self.map.gridSize - 2)
-            col = math.random(2, math.floor(self.map.gridSize / 2) - 2)
+            row = math.random(2, self.map.gridSize - 1)
+            col = math.random(2, math.floor(self.map.gridSize / 2) - 1)
             if not self:isCellOccupied(units, row, col) then
                 break
             end
         end
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
-        table.insert(units, Unit("sapiens", 5, unitX, unitY, color(143, 236, 67, 226)))
+        _ = color(143, 236, 67, 226)
+        table.insert(units, Unit("sapiens", 5, unitX, unitY, color(143, 236, 67, 24)))
     end
     
     for i = 1, neanderthalCount do
         while true do
-            row = math.random(3, self.map.gridSize - 1)
+            row = math.random(2, self.map.gridSize - 1)
             col = math.random(math.ceil(self.map.gridSize / 2) + 2, self.map.gridSize - 1)
             if not self:isCellOccupied(units, row, col) then
                 break
             end
         end
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
-        table.insert(units, Unit("neanderthal", 7, unitX, unitY, color(236, 67, 143, 222)))
+        _ = color(236, 67, 143, 222)
+        table.insert(units, Unit("neanderthal", 7, unitX, unitY, color(236, 67, 117, 29)))
     end
     
     return units

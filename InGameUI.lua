@@ -41,7 +41,7 @@ function InGameUI:drawUnit(unit)
     local rectY = y + (rectInset / 2)
     -- Draw a colored rectangle based on unit type
     fill(unit.color)
-    stroke(unit.color.r, unit.color.g, unit.color.b, 110)
+    stroke(unit.color.r, unit.color.g, unit.color.b, 80)
     rect(rectX, rectY, rectSize, rectSize)
     
     -- Draw the unit sprite
@@ -56,26 +56,6 @@ function InGameUI:drawUnit(unit)
         spriteSizeX = spriteSizeX * -1
     end
     sprite(asset.builtin.SpaceCute.Beetle_Ship, spriteX, spriteY, spriteSizeX, spriteSizeY)
-end
-
-function InGameUI:highlightAvailableMoves(unit)
-    local row, column = self.map:pointToCellRowAndColumn(unit.x, unit.y)
-    local adjacentCells = {
-        {row = row - 1, col = column},
-        {row = row + 1, col = column},
-        {row = row, col = column - 1},
-        {row = row, col = column + 1}
-    }
-    
-    local inset = self.map.cellSize * 0.1
-    for _, cell in ipairs(adjacentCells) do
-        local x = self.map.offsetX + (cell.col - 1) * self.map.cellSize + inset
-        local y = self.map.offsetY + (cell.row - 1) * self.map.cellSize + inset
-        pushStyle()
-        fill(unit.color.r, unit.color.g, unit.color.b, 96)
-        rect(x, y, self.map.cellSize - (inset * 2), self.map.cellSize - (inset * 2))
-        popStyle()
-    end
 end
 
 function InGameUI:highlightAvailableMoves(unit)

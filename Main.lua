@@ -39,6 +39,14 @@ function touched(touch)
                 if game.turnSystem.moveCounter >= teamUnits then
                     game.turnSystem:endTurn()
                 end
+            else
+                -- Check if another unit of the same team is touched
+                for _, unit in ipairs(units) do
+                    if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == game.turnSystem:getCurrentPlayer().team then
+                        game.inGameUI.selectedUnit = unit
+                        break
+                    end
+                end
             end
         else
             for _, unit in ipairs(units) do
@@ -50,4 +58,3 @@ function touched(touch)
         end
     end
 end
-
