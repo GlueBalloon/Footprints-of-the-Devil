@@ -17,42 +17,28 @@ function draw()
 end
 
 function touched(touch)
-    local units = game.unitManager:getUnits()
+    local units = game.unitManager.units
     if touch.state == BEGAN then
         local row, col = game.map:pointToCellRowAndColumn(touch.x, touch.y)
         if game.inGameUI.selectedUnit then
-            local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col)
-           -- print("validMove", validMove)
-            if validMove then
-                local unitX, unitY = game.map.offsetX + (col - 1) * game.map.cellSize, game.map.offsetY + (row - 1) * game.map.cellSize
-                game.inGameUI.selectedUnit.x, game.inGameUI.selectedUnit.y = unitX, unitY
-                game.inGameUI.selectedUnit = nil
-                game.turnSystem:endTurn()
-            end
-        else
-            for _, unit in ipairs(units) do
-                if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == game.turnSystem:getCurrentPlayer().team then
-                    game.inGameUI.selectedUnit = unit
-                    break
-                end
-            end
-        end
-    end
-end
-
-
-function touched(touch)
-    local units = game.unitManager:getUnits()
-    if touch.state == BEGAN then
-        local row, col = game.map:pointToCellRowAndColumn(touch.x, touch.y)
-        if game.inGameUI.selectedUnit then
-            local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, game.unitManager.units)
-         --   print("validMove", validMove)
+            local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, units)
             if validMove then
                 local unitX, unitY = game.map:cellRowAndColumnToPoint(row, col)
                 game.inGameUI.selectedUnit.x, game.inGameUI.selectedUnit.y = unitX + game.map.cellSize / 2, unitY + game.map.cellSize / 2
                 game.inGameUI.selectedUnit = nil
-                game.turnSystem:endTurn()
+                
+                game.turnSystem.moveCounter = game.turnSystem.moveCounter + 1
+                
+                local teamUnits = 0
+                for _, unit in ipairs(units) do
+                    if unit.team == game.turnSystem:getCurrentPlayer().team then
+                        teamUnits = teamUnits + 1
+                    end
+                end
+                
+                if game.turnSystem.moveCounter >= teamUnits then
+                    game.turnSystem:endTurn()
+                end
             end
         else
             for _, unit in ipairs(units) do
@@ -64,3 +50,4 @@ function touched(touch)
         end
     end
 end
+
