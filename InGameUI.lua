@@ -11,6 +11,7 @@ end
 function InGameUI:draw(units)
     if self.selectedUnit then
         self:drawSelectedUnitInfo(self.selectedUnit)
+        self:highlightAvailableMoves(self.selectedUnit)
     end
     
     for _, unit in ipairs(units) do
@@ -39,24 +40,65 @@ function InGameUI:drawUnit(unit)
     local rectX = x + (rectInset / 2)
     local rectY = y + (rectInset / 2)
     -- Draw a colored rectangle based on unit type
-    if unit.team == "sapiens" then
-        fill(143, 236, 67, 226)
-        stroke(92, 159, 38, 150)
-    elseif unit.team == "neanderthal" then
-        fill(236, 67, 143, 222)
-        stroke(146, 40, 88, 169)
-    end
+    fill(unit.color)
+    stroke(unit.color.r, unit.color.g, unit.color.b, 110)
     rect(rectX, rectY, rectSize, rectSize)
     
     -- Draw the unit sprite
     local spriteInset = self.map.cellSize * 0.2
     spriteMode(CORNER)
-    local spriteSize = self.map.cellSize - spriteInset
+    local spriteSizeX = self.map.cellSize - spriteInset
+    local spriteSizeY = spriteSizeX
     local spriteX = x + (spriteInset / 2)
     local spriteY = y + (spriteInset / 2)
-    sprite(asset.builtin.SpaceCute.Beetle_Ship, spriteX, spriteY, spriteSize, spriteSize)
+    if unit.team == "neanderthal" then
+        spriteX = spriteX + spriteSizeX
+        spriteSizeX = spriteSizeX * -1
+    end
+    sprite(asset.builtin.SpaceCute.Beetle_Ship, spriteX, spriteY, spriteSizeX, spriteSizeY)
 end
 
+function InGameUI:highlightAvailableMoves(unit)
+    local row, column = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local adjacentCells = {
+        {row = row - 1, col = column},
+        {row = row + 1, col = column},
+        {row = row, col = column - 1},
+        {row = row, col = column + 1}
+    }
+    
+    local inset = self.map.cellSize * 0.1
+    for _, cell in ipairs(adjacentCells) do
+        local x = self.map.offsetX + (cell.col - 1) * self.map.cellSize + inset
+        local y = self.map.offsetY + (cell.row - 1) * self.map.cellSize + inset
+        pushStyle()
+        fill(unit.color.r, unit.color.g, unit.color.b, 96)
+        rect(x, y, self.map.cellSize - (inset * 2), self.map.cellSize - (inset * 2))
+        popStyle()
+    end
+end
+
+function InGameUI:highlightAvailableMoves(unit)
+    local row, column = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local adjacentCells = {
+        {row = row - 1, col = column},
+        {row = row + 1, col = column},
+        {row = row, col = column - 1},
+        {row = row, col = column + 1}
+    }
+    
+    for _, cell in ipairs(adjacentCells) do
+        -- Check if the cell coordinates are within the map grid bounds
+        if cell.row >= 1 and cell.row <= self.map.gridSize and cell.col >= 1 and cell.col <= self.map.gridSize then
+            local x = self.map.offsetX + (cell.col - 1) * self.map.cellSize
+            local y = self.map.offsetY + (cell.row - 1) * self.map.cellSize
+            pushStyle()
+            fill(unit.color.r, unit.color.g, unit.color.b, 80)
+            rect(x, y, self.map.cellSize, self.map.cellSize)
+            popStyle()
+        end
+    end
+end
 
 function InGameUI:drawSelectedUnitInfo(unit)
     -- Draw the background square for the unit info
@@ -75,6 +117,13 @@ function InGameUI:drawSelectedUnitInfo(unit)
     text("Strength: " .. unit.strength, textX, textY - 20)
 end
 
+function InGameUI:isValidMove(unit, row, col)
+    local currentRow, currentCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local rowDelta = math.abs(row - currentRow)
+    local colDelta = math.abs(col - currentCol)
+    
+    return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
+end
 
 function InGameUI:selectUnit(units, x, y)
     if not units then
@@ -96,3 +145,5 @@ function InGameUI:moveSelectedUnit(x, y)
         self.selectedUnit.y = y
     end
 end
+
+

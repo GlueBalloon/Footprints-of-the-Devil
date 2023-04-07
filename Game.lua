@@ -4,7 +4,17 @@ Game = class()
 
 function Game:init()
     self.gameState = "inGame"
-    self.map = Map()
+    local cellsPerSide = 12
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.8
+    local mapX, mapY = 200, 20
+    self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
+    local player1 = Player(1, "sapiens")
+    local aiPlayer = AIPlayer(2, "neanderthal")
+    self.players = {player1, aiPlayer}
+    self.turnSystem = TurnSystem(self.players)
+    self.unitManager = UnitManager(self.players)
+    self.inGameUI = InGameUI(self.map)
+    self.saveManager = SaveManager()
 end
 
 function Game:update()
@@ -17,6 +27,7 @@ function Game:draw()
     if self.gameState == "inGame" then
         self.map:draw()
     end
+    self.inGameUI:draw(self.unitManager:getUnits())
 end
 
 function Game:serialize()
@@ -36,18 +47,25 @@ function Game:deserialize(gameData)
     end
 end
 
+function Game:unitContainsPoint(unit, x, y)
+    local pointRow, pointCol = self.map:pointToCellRowAndColumn(x, y)
+    local unitRow, unitCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    
+    return pointRow == unitRow and pointCol == unitCol
+end
+
 function Game:saveGame(slot)
     local saveData = {
         map = self.map:serialize(),
-        units = unitManager:serializeUnits(),
+        units = self.unitManager:serializeUnits(),
     }
-    saveManager:save(slot, saveData)
+    self.saveManager:save(slot, saveData)
 end
 
 function Game:loadGame(slot)
-    local saveData = saveManager:load(slot)
+    local saveData = self.saveManager:load(slot)
     if saveData then
         self.map:deserialize(saveData.map)
-        unitManager:deserializeUnits(saveData.units)
+        self.unitManager:deserializeUnits(saveData.units)
     end
 end

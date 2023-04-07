@@ -5,6 +5,7 @@
 	<key>Buffer Order</key>
 	<array>
 		<string>Scratch</string>
+		<string>SprintGoals</string>
 		<string>Main</string>
 		<string>MainMenu</string>
 		<string>Game</string>
@@ -14,6 +15,7 @@
 		<string>SaveManager</string>
 		<string>Map</string>
 		<string>AIPlayer</string>
+		<string>Player</string>
 	</array>
 	<key>Dependencies</key>
 	<array>

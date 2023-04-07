@@ -20,8 +20,5 @@ end
 function TurnSystem:startTurn()
     local currentPlayer = self:getCurrentPlayer()
     print("Player " .. currentPlayer.id .. "'s turn")
-    if currentPlayer.takeTurn then
-        currentPlayer:takeTurn(map.units, map)
-        self:endTurn()
-    end
 end
+

@@ -1,7 +1,8 @@
 AIPlayer = class()
 
-function AIPlayer:init(id)
+function AIPlayer:init(id, team)
     self.id = id
+    self.team = team
 end
 
 function AIPlayer:takeTurn(units, map)
