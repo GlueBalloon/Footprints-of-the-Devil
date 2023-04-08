@@ -6,7 +6,7 @@ function setup()
     game = Game()
   --  game.unitManager:createUnit("sapiens", 5, 400, HEIGHT/2, color(143, 236, 67, 226))
   --  game.unitManager:createUnit("neanderthal", 7, WIDTH/2, 306, color(236, 67, 143, 222))
-    game.turnSystem:startTurn()    
+    game.turnSystem:nextTurn()    
 end
 
 function draw()
@@ -17,6 +17,7 @@ function draw()
 end
 
 function touched(touch)
+    game.inGameUI:touched(touch)
     local units = game.unitManager.units
     if touch.state == BEGAN then
         local row, col = game.map:pointToCellRowAndColumn(touch.x, touch.y)
@@ -37,7 +38,7 @@ function touched(touch)
                 end
                 
                 if game.turnSystem.moveCounter >= teamUnits then
-                    game.turnSystem:endTurn()
+                    game.turnSystem:nextTurn()
                 end
             else
                 -- Check if another unit of the same team is touched

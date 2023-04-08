@@ -6,9 +6,11 @@ function InGameUI:init(map)
     self.gridSize = map.gridSize
     self.cellSize = map.cellSize
     self.selectedUnit = nil
+    self.turnEndFunction = function() end
+    self.fontSizingText = "presenting magic"
 end
 
-function InGameUI:draw(units)
+function InGameUI:drawAllUnits(units)
     if self.selectedUnit then
         self:drawSelectedUnitInfo(self.selectedUnit)
         self:highlightAvailableMoves(self.selectedUnit)
@@ -108,6 +110,9 @@ end
 
 function InGameUI:isValidMove(unit, row, col, units)
     local currentRow, currentCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    if (not currentRow) or (not currentCol) then
+        return false
+    end
     local rowDelta = math.abs(row - currentRow)
     local colDelta = math.abs(col - currentCol)
     
@@ -149,4 +154,74 @@ function InGameUI:moveSelectedUnit(x, y)
     end
 end
 
+function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)    
+    pushStyle()
+    strokeWidth(3)
+    stroke(teamColor)
+    fill(teamColor.r, teamColor.g, teamColor.b, 110)
+    rect(x, y, width, height)
+    local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
+    fontSize(newFontSize)
+    textMode(CENTER)
+    fill(0, 104)
+    text("turn: "..teamName, x - 1 + width / 2, y - 1 + height / 2)
+    fill(255)
+    text("turn: "..teamName, x + width / 2, y + height / 2)
+    popStyle()
+end
+
+function InGameUI:fontSizeForWidth(aText, desiredWidth)
+    local currentFontSize = fontSize()
+    local textW, textH = textSize(aText)
+    local scaleFactor = desiredWidth / textW   
+    return currentFontSize * scaleFactor
+end
+
+function InGameUI:drawEndTurnButton(x, y, width, height)
+    self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
+    
+    pushStyle()
+    fill(255, 0, 0, 62)
+    stroke(220, 104, 97)
+    strokeWidth(3)
+    rect(x, y, width, height)
+    
+    fill(255)
+    local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
+    fontSize(newFontSize)
+    textMode(CENTER)
+    text("end turn", x + width / 2, y + height / 2)
+    popStyle()
+end
+
+
+function InGameUI:drawUnitStatsPanel(x, y, width, height, unit)
+    pushStyle()
+    fill(255, 255, 255, 200)
+    rect(x, y, width, height)
+    
+    if unit then
+        local statsText = "Unit: " .. unit.team .. "\nStrength: " .. unit.strength
+        fill(0)
+        fontSize(height * 0.15)
+        textMode(CORNER)
+        text(statsText, x + width * 0.1, y + height * 0.8)
+    end
+    
+    popStyle()
+end
+
+function InGameUI:touched(touch)
+    if touch.state == ENDED then
+        if self:isTouchWithinEndTurnButton(touch) then
+            self.turnEndFunction()
+        end
+    end
+end
+
+function InGameUI:isTouchWithinEndTurnButton(touch)
+    local bounds = self.endTurnButtonBounds
+    return touch.x >= bounds.x and touch.x <= bounds.x + bounds.width
+    and touch.y >= bounds.y and touch.y <= bounds.y + bounds.height
+end
 

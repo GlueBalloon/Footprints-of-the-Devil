@@ -25,8 +25,8 @@ function TurnSystem:resetMoveCounter()
     self.moveCounter = 0
 end
 
--- Modify the endTurn function to reset the move counter
-function TurnSystem:endTurn()
+-- Modify the nextTurn function to reset the move counter
+function TurnSystem:nextTurn()
     self.currentPlayerIndex = self.currentPlayerIndex % #self.players + 1
     self:resetMoveCounter()
 end

@@ -5,17 +5,20 @@ Game = class()
 function Game:init()
     self.gameState = "inGame"
     local cellsPerSide = 10
-    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.87
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.74
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
-    local player1 = Player(1, "sapiens")
-    local aiPlayer = AIPlayer(2, "neanderthal")
+    local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
+    local aiPlayer = AIPlayer(2, "neanderthal", color(236, 67, 143, 222))
     self.players = {player1, aiPlayer}
     self.turnSystem = TurnSystem(self.players)
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
+    self.inGameUI.turnEndFunction = function() self.turnSystem:nextTurn() end
     self.saveManager = SaveManager()
     self.unitManager.units = self:generateRandomUnits(5, 5)   
+    self.turnIndicatorRect = vec4(mapX, mapY * 0.45, sideSize * 0.4, mapY * 0.45)
+    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.4), mapY * 0.45, sideSize * 0.4, mapY * 0.45)
 end
 
 function Game:update()
@@ -28,7 +31,12 @@ function Game:draw()
     if self.gameState == "inGame" then
         self.map:draw()
     end
-    self.inGameUI:draw(self.unitManager:getUnits())
+    local turnPlayer = self.players[self.turnSystem.currentPlayerIndex]
+    local tRec, eRec = self.turnIndicatorRect, self.endTurnRect
+    self.inGameUI:drawTurnIndicator(tRec.x, tRec.y, tRec.z, tRec.w, turnPlayer.team, turnPlayer.teamColor)
+    self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
+    self.inGameUI:drawUnitStatsPanel(10, 130, 200, 100, self.inGameUI.selectedUnit)
+    self.inGameUI:drawAllUnits(self.unitManager.units)
 end
 
 function Game:serialize()
@@ -84,8 +92,9 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
             end
         end
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
-        _ = color(143, 236, 67, 226)
-        table.insert(units, Unit("sapiens", 5, unitX, unitY, color(143, 236, 67, 24)))
+        local tColor = self.players[1].teamColor
+        local uColor = color(tColor.r, tColor.g, tColor.b, 24)
+        table.insert(units, Unit(self.players[1].team, 5, unitX, unitY, uColor))
     end
     
     for i = 1, neanderthalCount do
@@ -97,8 +106,9 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
             end
         end
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
-        _ = color(236, 67, 143, 222)
-        table.insert(units, Unit("neanderthal", 7, unitX, unitY, color(236, 67, 117, 29)))
+        local tColor = self.players[2].teamColor
+        local uColor = color(tColor.r, tColor.g, tColor.b, 24)
+        table.insert(units, Unit(self.players[2].team, 7, unitX, unitY, color(236, 67, 117, 29)))
     end
     
     return units
