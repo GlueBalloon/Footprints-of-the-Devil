@@ -16,6 +16,7 @@
 		<string>Map</string>
 		<string>AIPlayer</string>
 		<string>Player</string>
+		<string>Credit</string>
 	</array>
 	<key>Dependencies</key>
 	<array>

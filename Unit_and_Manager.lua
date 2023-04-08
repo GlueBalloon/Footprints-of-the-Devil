@@ -2,13 +2,14 @@
 Unit = class()
 
 -- Unit Class
-function Unit:init(team, strength, x, y, aColor)
+function Unit:init(team, strength, x, y, aColor, icon)
     self.team = team
     self.strength = strength
     self.x = x
     self.y = y
     self.level = 1
     self.color = aColor or color(236, 217, 67)
+    self.icon = icon or asset.builtin.SpaceCute.Beetle_Ship
 end
 
 

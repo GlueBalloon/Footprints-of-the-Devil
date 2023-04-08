@@ -6,7 +6,7 @@ function setup()
     game = Game()
   --  game.unitManager:createUnit("sapiens", 5, 400, HEIGHT/2, color(143, 236, 67, 226))
   --  game.unitManager:createUnit("neanderthal", 7, WIDTH/2, 306, color(236, 67, 143, 222))
-    game.turnSystem:nextTurn()    
+  --  game.turnSystem:nextTurn()    
 end
 
 function draw()

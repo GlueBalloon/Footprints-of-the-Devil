@@ -15,6 +15,10 @@ function TurnSystem:getCurrentPlayer()
     return self.players[self.currentPlayerIndex]
 end
 
+function TurnSystem:getCurrentTeam()
+    return self.players[self.currentPlayerIndex].team
+end
+
 function TurnSystem:startTurn()
     local currentPlayer = self:getCurrentPlayer()
     print("Player " .. currentPlayer.id .. "'s turn")

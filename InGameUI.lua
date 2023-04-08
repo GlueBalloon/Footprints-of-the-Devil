@@ -6,9 +6,42 @@ function InGameUI:init(map)
     self.gridSize = map.gridSize
     self.cellSize = map.cellSize
     self.selectedUnit = nil
+    self.isActiveTeam = function(team) end
     self.turnEndFunction = function() end
-    self.fontSizingText = "presenting magic"
+    self.fontSizingText = "abcdefghijklmnop"
+    self.announcementStartTime = 0
+    self.announcementTeam = nil
 end
+
+function InGameUI:announceTurn(team)
+    self.announcementStartTime = os.clock()
+    self.announcementTeam = team
+end
+
+function InGameUI:drawAnnouncement()
+    if self.announcementTeam then
+        local elapsedTime = os.clock() - self.announcementStartTime
+        local fadeDuration = 1.5 -- Adjust this value to control the fade-out speed
+        local alpha = math.max(0, 255 * (1 - elapsedTime / fadeDuration))
+        
+        pushStyle()
+        fill(0, 0, 0, 110)
+        rectMode(CENTER)
+        rect(WIDTH / 2, HEIGHT / 2, WIDTH / 3, HEIGHT / 8)
+        
+        local textStr = "Turn: " .. self.announcementTeam
+        fontSize(fontSizeForWidth(textStr, WIDTH / 3))
+        fill(255, 255, 255, alpha)
+        textAlign(CENTER, CENTER)
+        text(textStr, WIDTH / 2, HEIGHT / 2)
+        popStyle()
+        
+        if alpha <= 0 then
+            self.announcementTeam = nil
+        end
+    end
+end
+
 
 function InGameUI:drawAllUnits(units)
     if self.selectedUnit then
@@ -29,7 +62,7 @@ function InGameUI:drawUnit(unit)
         print("not row or column ", row, column, unit.x, unit.y)
         return
     end
-
+    
     -- Calculate the x and y position of the cell
     local x = self.map.offsetX + (column - 1) * self.map.cellSize
     local y = self.map.offsetY + (row - 1) * self.map.cellSize
@@ -44,20 +77,19 @@ function InGameUI:drawUnit(unit)
     -- Draw a colored rectangle based on unit type
     fill(unit.color)
     stroke(unit.color.r, unit.color.g, unit.color.b, 80)
+    if self.isActiveTeam(unit.team) then
+        stroke(unit.color.r, unit.color.g, unit.color.b, 255)
+    end
     rect(rectX, rectY, rectSize, rectSize)
     
     -- Draw the unit sprite
-    local spriteInset = self.map.cellSize * 0.2
+    local spriteInset = self.map.cellSize * 0.15
     spriteMode(CORNER)
     local spriteSizeX = self.map.cellSize - spriteInset
     local spriteSizeY = spriteSizeX
     local spriteX = x + (spriteInset / 2)
     local spriteY = y + (spriteInset / 2)
-    if unit.team == "neanderthal" then
-        spriteX = spriteX + spriteSizeX
-        spriteSizeX = spriteSizeX * -1
-    end
-    sprite(asset.builtin.SpaceCute.Beetle_Ship, spriteX, spriteY, spriteSizeX, spriteSizeY)
+    sprite(unit.icon, x, y, self.map.cellSize)
 end
 
 function InGameUI:highlightAvailableMoves(unit)
@@ -158,7 +190,7 @@ function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)
     pushStyle()
     strokeWidth(3)
     stroke(teamColor)
-    fill(teamColor.r, teamColor.g, teamColor.b, 110)
+    fill(teamColor.r, teamColor.g, teamColor.b, 200)
     rect(x, y, width, height)
     local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
     fontSize(newFontSize)
