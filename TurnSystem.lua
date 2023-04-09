@@ -1,14 +1,25 @@
 TurnSystem = class()
 
-function TurnSystem:init(players)
+function TurnSystem:init(players, timePerTurn)
     self.players = players
     self.currentPlayerIndex = 1
     self.moveCounter = 0
+    self.timePerTurn = timePerTurn or 2
+    self.timeRemaining = self.timePerTurn
+    self.turnStartTime = os.clock()
+    self.funcWhenTurnChanges = function() end
+    self.turnChangeAnimationInProgress = false
 end
 
--- Add a new function to reset the move counter
-function TurnSystem:resetMoveCounter()
-    self.moveCounter = 0
+function TurnSystem:update(deltaTime)
+    if self.turnChangeAnimationInProgress then
+        return
+    end
+    local timeElapsed = os.clock() - self.turnStartTime
+    self.timeRemaining = self.timePerTurn - timeElapsed    
+    if self.timeRemaining <= 0 then
+        self:nextTurn()
+    end
 end
 
 function TurnSystem:getCurrentPlayer()
@@ -33,5 +44,7 @@ end
 function TurnSystem:nextTurn()
     self.currentPlayerIndex = self.currentPlayerIndex % #self.players + 1
     self:resetMoveCounter()
+    self.turnStartTime = os.clock()
+    self.funcWhenTurnChanges()
 end
 

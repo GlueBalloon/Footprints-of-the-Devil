@@ -3,43 +3,53 @@
 Game = class()
 
 function Game:init()
+    font("ArialRoundedMTBold")
     self.gameState = "inGame"
     local cellsPerSide = 10
     local sideSize = (math.min(WIDTH, HEIGHT)) * 0.74
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
-    local aiPlayer = AIPlayer(2, "neanderthal", color(255, 0, 240, 222))
+    local aiPlayer = AIPlayer(2, "neanderthal", color(233, 77, 224, 222))
     self.players = {player1, aiPlayer}
-    self.turnSystem = TurnSystem(self.players)
+    self.turnSystem = TurnSystem(self.players, 6)
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
-    self.inGameUI.turnEndFunction = function() self.turnSystem:nextTurn() end
+    self.turnSystem.funcWhenTurnChanges = function() 
+        self.inGameUI.selectedUnit = nil
+        self.turnSystem.turnChangeAnimationInProgress = true
+        self.turnSystem.timeRemaining = 0.0
+        self.inGameUI:announceTurn(self.turnSystem:getCurrentTeam())
+    end
+    self.endTurnChangeAnimation = function()
+        self.turnSystem.turnChangeAnimationInProgress = false
+    end
+    self.inGameUI.nextTurnButtonAction = function()
+        self.turnSystem:nextTurn()
+    end
     self.inGameUI.isActiveTeam = function(team)
         return self.turnSystem:getCurrentTeam() == team
     end
     self.saveManager = SaveManager()
     self.unitManager.units = self:generateRandomUnits(5, 5)   
-    self.turnIndicatorRect = vec4(mapX, mapY * 0.45, sideSize * 0.4, mapY * 0.45)
-    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.4), mapY * 0.45, sideSize * 0.4, mapY * 0.45)
+    self.turnIndicatorRect = vec4(mapX, mapY * 0.45, sideSize * 0.49, mapY * 0.45)
+    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.49), mapY * 0.45, sideSize * 0.49, mapY * 0.45)
+    self.timeLeftRect = vec4(mapX, (mapY * 1.1) + sideSize, sideSize * 0.65, mapY * 0.65)
 end
 
-function Game:update()
-    if self.gameState == "inGame" then
-        self.map:update()
-    end
-end
-
-function Game:draw()
+function Game:draw(deltaTime)
     if self.gameState == "inGame" then
         self.map:draw()
     end
     local turnPlayer = self.players[self.turnSystem.currentPlayerIndex]
-    local tRec, eRec = self.turnIndicatorRect, self.endTurnRect
-    self.inGameUI:drawTurnIndicator(tRec.x, tRec.y, tRec.z, tRec.w, turnPlayer.team, turnPlayer.teamColor)
+    local tiRec, eRec, tlRec = self.turnIndicatorRect, self.endTurnRect, self.timeLeftRect
+    self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
+    self.inGameUI:drawTimeLeft(tlRec.x, tlRec.y, tlRec.z, tlRec.w, self.turnSystem.timeRemaining)
     self.inGameUI:drawUnitStatsPanel(10, 130, 200, 100, self.inGameUI.selectedUnit)
     self.inGameUI:drawAllUnits(self.unitManager.units)
+    self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeAnimation)
+    self.turnSystem:update(deltaTime)
 end
 
 function Game:serialize()

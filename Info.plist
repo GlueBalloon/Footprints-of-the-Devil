@@ -17,6 +17,7 @@
 		<string>AIPlayer</string>
 		<string>Player</string>
 		<string>Credit</string>
+		<string>RoundedRect</string>
 	</array>
 	<key>Dependencies</key>
 	<array>

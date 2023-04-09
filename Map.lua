@@ -1,63 +1,6 @@
 
 Map = class()
 
-function Map:init()
-    self.gridSize = 12
-    local inset = math.min(WIDTH, HEIGHT) * 0.08
-    self.cellSize = (math.min(WIDTH, HEIGHT) - 2 * inset) / self.gridSize
-    self.offsetX = (WIDTH - (self.cellSize * self.gridSize)) / 2
-    self.offsetY = (HEIGHT - (self.cellSize * self.gridSize)) / 2
-    self.terrain = {}
-    self.units = {}
-    self.cellColors = {}
-    self.fakePixelsPerSide = 4
-    self.smallCellSize = self.cellSize / self.fakePixelsPerSide -- Calculate the size of the smaller rects
-    
-    self.smallCellColors = {}
-    --color pairs
-    self.highestElevationColor = color(245, 222, 179)
-    self.lowestElevationColor = color(226, 150, 117)
-    --or
-    self.highestElevationColor = color(217, 203, 171)
-    self.lowestElevationColor = color(211, 150, 124)
-    --or
-    self.highestElevationColor = color(219, 169, 138)
-    self.lowestElevationColor = color(192, 107, 68)
-    self.perlinNoise = craft.noise.perlin()
-    self.offsetXNoise = math.random(0, 10000)
-    self.offsetYNoise = math.random(0, 10000)
-    local noiseMagnifier = math.random(65, 130) * 0.01
-   -- print(noiseMagnifier)
-    self.noiseScale = 0.0075 * noiseMagnifier
-    for i = 1, self.gridSize do
-        self.smallCellColors[i] = {}
-        for j = 1, self.gridSize do
-            self.smallCellColors[i][j] = {}
-            for k = 1, self.fakePixelsPerSide do
-                self.smallCellColors[i][j][k] = {}
-                for l = 1, self.fakePixelsPerSide do
-                    local noiseValue = self.perlinNoise:getValue(
-                    (self.offsetX + (i - 1) * self.cellSize + (k - 1) * self.smallCellSize + self.offsetXNoise) * self.noiseScale, 
-                    (self.offsetY + (j - 1) * self.cellSize + (l - 1) * self.smallCellSize + self.offsetYNoise) * self.noiseScale, 
-                    0
-                    )
-                    -- Normalize the noiseValue to be between 0 and 1
-                    noiseValue = (noiseValue + 1) / 2
-                    noiseValue = math.max(0, math.min(1, noiseValue))
-                    self.smallCellColors[i][j][k][l] = self:lerpColors(noiseValue, self.highestElevationColor, self.lowestElevationColor)
-                end
-            end
-        end
-    end
-    parameter.boolean("drawMiniNoise")
-    parameter.color("highColor", color(243, 242, 241))
-    parameter.color("lowColor", color(211, 150, 124))
-    highColor = self.highestElevationColor
-    lowColor = self.lowestElevationColor
-end
-
-Map = class()
-
 function Map:init(x, y, width, height, cellsPerSide)
     self.gridSize = cellsPerSide
     self.cellSize = math.min(width, height) / self.gridSize
@@ -124,10 +67,6 @@ function Map:lerpColors(amount, color1, color2)
     local b = lerp(color1.b, color2.b, amount)
     local returnColor = color(r, g, b)
     return returnColor
-end
-
-function Map:update()
-    -- Update units and other map elements here
 end
 
 function Map:draw()

@@ -2,6 +2,7 @@
 
 -- Main
 function setup()    
+    parameter.watch("countdown")
     parameter.watch("selectedUnit")
     game = Game()
   --  game.unitManager:createUnit("sapiens", 5, 400, HEIGHT/2, color(143, 236, 67, 226))
@@ -11,17 +12,22 @@ end
 
 function draw()
     background(40, 40, 50)
-    game:update()
-    game:draw()
+    game:draw(DeltaTime)
     selectedUnit = game.inGameUI.selectedUnit
+    countdown = game.turnSystem.timeRemaining
 end
 
 function touched(touch)
+    if game.turnSystem.turnChangeAnimationInProgress then
+        print("nil unit!")
+        game.inGameUI.selectedUnit = nil
+        return
+    end
     game.inGameUI:touched(touch)
     local units = game.unitManager.units
     if touch.state == BEGAN then
         local row, col = game.map:pointToCellRowAndColumn(touch.x, touch.y)
-        if game.inGameUI.selectedUnit then
+        if game.inGameUI.selectedUnit and row and col then
             local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, units)
             if validMove then
                 local unitX, unitY = game.map:cellRowAndColumnToPoint(row, col)

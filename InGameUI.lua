@@ -7,7 +7,7 @@ function InGameUI:init(map)
     self.cellSize = map.cellSize
     self.selectedUnit = nil
     self.isActiveTeam = function(team) end
-    self.turnEndFunction = function() end
+    self.nextTurnButtonAction = function() end
     self.fontSizingText = "abcdefghijklmnop"
     self.announcementStartTime = 0
     self.announcementTeam = nil
@@ -18,27 +18,50 @@ function InGameUI:announceTurn(team)
     self.announcementTeam = team
 end
 
-function InGameUI:drawAnnouncement()
+function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
+        
         local elapsedTime = os.clock() - self.announcementStartTime
-        local fadeDuration = 1.5 -- Adjust this value to control the fade-out speed
-        local alpha = math.max(0, 255 * (1 - elapsedTime / fadeDuration))
+        local fadeInDuration = 0.35 -- Adjust this value to control the fade-in speed
+        local timeBeforeFadeStarts = 0.5 -- Adjust this value to control the time before fade-out starts
+        local fadeOutDuration = 0.25 -- Adjust this value to control the fade-out speed
+        
+        local alpha = 255
+        if elapsedTime < fadeInDuration then
+            alpha = 255 * (elapsedTime / fadeInDuration)
+        elseif elapsedTime > timeBeforeFadeStarts then
+            local fadeOutTime = elapsedTime - timeBeforeFadeStarts
+            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
+        end
         
         pushStyle()
-        fill(0, 0, 0, 110)
-        rectMode(CENTER)
-        rect(WIDTH / 2, HEIGHT / 2, WIDTH / 3, HEIGHT / 8)
         
-        local textStr = "Turn: " .. self.announcementTeam
-        fontSize(fontSizeForWidth(textStr, WIDTH / 3))
-        fill(255, 255, 255, alpha)
-        textAlign(CENTER, CENTER)
+        -- frame with dark background
+        rectMode(CENTER)
+        strokeWidth(8)       
+        stroke(teamColor.r, teamColor.g, teamColor.b, alpha)
+        fill(0, 0, 0, math.min(110, alpha * 0.8))
+        local rectSize = math.min(WIDTH, HEIGHT) * 0.69
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        -- team announcement
+        local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
+        fontSize(sizedFont * 0.8)
+        textAlign(CENTER)
+        local textStr = "Turn:\n" .. self.announcementTeam
+        fill(0, 0, 0, math.min(110, alpha * 0.8))
+        text(textStr, (WIDTH / 2) - 1, (HEIGHT / 2) - 1)
+        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
         text(textStr, WIDTH / 2, HEIGHT / 2)
+        
         popStyle()
         
         if alpha <= 0 then
             self.announcementTeam = nil
+            if fadeCompleteCallback then
+                fadeCompleteCallback()
+            end
         end
+        
     end
 end
 
@@ -69,7 +92,7 @@ function InGameUI:drawUnit(unit)
     
     -- Draw the background rectangle
     pushStyle()
-    strokeWidth(self.map.cellSize * 0.1)
+    strokeWidth(self.map.cellSize * 0.06)
     local rectInset = self.map.cellSize * 0.05
     local rectSize = self.map.cellSize - rectInset
     local rectX = x + (rectInset / 2)
@@ -78,9 +101,9 @@ function InGameUI:drawUnit(unit)
     fill(unit.color)
     stroke(unit.color.r, unit.color.g, unit.color.b, 80)
     if self.isActiveTeam(unit.team) then
-        stroke(unit.color.r, unit.color.g, unit.color.b, 255)
+        stroke(unit.color.r, unit.color.g, unit.color.b, 180)
     end
-    rect(rectX, rectY, rectSize, rectSize)
+    roundRect(rectX + (rectSize * 0.5), rectY + (rectSize * 0.5), rectSize, rectSize, rectSize * 0.25)
     
     -- Draw the unit sprite
     local spriteInset = self.map.cellSize * 0.15
@@ -130,14 +153,6 @@ function InGameUI:drawSelectedUnitInfo(unit)
     fill(255)
     text("Unit Team: " .. unit.team, textX, textY)
     text("Strength: " .. unit.strength, textX, textY - 20)
-end
-
-function InGameUI:isValidMove(unit, row, col)
-    local currentRow, currentCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
-    local rowDelta = math.abs(row - currentRow)
-    local colDelta = math.abs(col - currentCol)
-    
-    return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
 end
 
 function InGameUI:isValidMove(unit, row, col, units)
@@ -191,7 +206,7 @@ function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)
     strokeWidth(3)
     stroke(teamColor)
     fill(teamColor.r, teamColor.g, teamColor.b, 200)
-    rect(x, y, width, height)
+    roundRect(x + (width / 2), y + (height / 2), width, height)
     local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
     fontSize(newFontSize)
     textMode(CENTER)
@@ -209,6 +224,36 @@ function InGameUI:fontSizeForWidth(aText, desiredWidth)
     return currentFontSize * scaleFactor
 end
 
+function InGameUI:drawTimeLeft(x, y, width, height, timeLeft)
+    pushStyle()
+    fontSize(self:fontSizeForWidth(self.fontSizingText, width))
+    textAlign(CENTER, CENTER)
+    strokeWidth(4)
+    stroke(196, 204, 220)
+    fill(61, 65, 81)
+    rectMode(CORNER)
+    roundRect(x + (width / 2), y + (height / 2), width, height)
+    fill(0, 237)
+    text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), (x + width / 2) -1, (y + height / 2) - 1)
+    fill(255, 255, 255)
+    text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), x + width / 2, y + height / 2)
+    popStyle()
+end
+
+function InGameUI:drawMovesLeft(x, y, width, height, movesLeft)
+    pushStyle()
+    fontSize(self:fontSizeForWidth(self.fontSizingText, width))
+    textAlign(CENTER, CENTER)
+    
+    fill(0, 0, 0, 128)
+    rectMode(CORNER)
+    rect(x, y, width, height)
+    
+    fill(255, 255, 255)
+    text("Moves Left: " .. movesLeft, x + width / 2, y + height / 2)
+    popStyle()
+end
+
 function InGameUI:drawEndTurnButton(x, y, width, height)
     self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
     
@@ -216,8 +261,7 @@ function InGameUI:drawEndTurnButton(x, y, width, height)
     fill(255, 0, 0, 62)
     stroke(220, 104, 97)
     strokeWidth(3)
-    rect(x, y, width, height)
-    
+    roundRect(x + (width / 2), y + (height / 2), width, height)
     fill(255)
     local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
     fontSize(newFontSize)
@@ -246,7 +290,7 @@ end
 function InGameUI:touched(touch)
     if touch.state == ENDED then
         if self:isTouchWithinEndTurnButton(touch) then
-            self.turnEndFunction()
+            self.nextTurnButtonAction()
         end
     end
 end
