@@ -11,6 +11,7 @@ function InGameUI:init(map)
     self.fontSizingText = "abcdefghijklmnop"
     self.announcementStartTime = 0
     self.announcementTeam = nil
+    self.crosshairsAnimationTween = {scale = 0.5}
 end
 
 function InGameUI:announceTurn(team)
@@ -149,6 +150,13 @@ function InGameUI:drawAttackableTargets(units)
 end
 
 function InGameUI:drawCrosshairsOn(unit)
+    local elapsedTime = os.clock() - self.crosshairsAnimationStartTime
+    local scale = math.min(1, elapsedTime / 0.05)
+    
+    pushMatrix()
+    translate(unit.x, unit.y)
+    scale(scale, scale)
+    
     pushStyle()
     noFill()
     strokeWidth(self.map.cellSize * 0.15)
@@ -168,6 +176,142 @@ function InGameUI:drawCrosshairsOn(unit)
     popStyle()
 end
 
+function InGameUI:drawCrosshairsOn(unit)
+    local function drawScaledCrosshairs(aScale)
+        pushMatrix()
+        translate(unit.x, unit.y)
+        scale(aScale)
+        
+        pushStyle()
+        noFill()
+        strokeWidth(self.map.cellSize * 0.15)
+        stroke(255, 0, 0) -- Red crosshairs
+        
+        local circleRadius = self.map.cellSize * 0.4
+        
+        ellipse(unit.x, unit.y, circleRadius * 2, circleRadius * 2)
+        
+        local lineLength = self.map.cellSize * 0.1
+        
+        line(unit.x - circleRadius - lineLength, unit.y, unit.x - circleRadius + lineLength + strokeWidth(), unit.y) -- West line
+        line(unit.x + circleRadius + lineLength, unit.y, unit.x + circleRadius - lineLength - strokeWidth(), unit.y) -- East line
+        line(unit.x, unit.y - circleRadius - lineLength, unit.x, unit.y - circleRadius + lineLength + strokeWidth()) -- South line
+        line(unit.x, unit.y + circleRadius + lineLength, unit.x, unit.y + circleRadius - lineLength - strokeWidth()) -- North line
+        
+        popStyle()
+        popMatrix()
+    end
+    
+    local duration = 0.5
+    local scaleSmall = 0.5
+    local scaleLarge = 1
+    local bounceFactor = 1.2
+    local crosshairTween = self.crosshairsAnimationTween
+    
+    tween(duration * 0.5, crosshairTween, {scale = scaleSmall}, {easing = tween.easing.linear, callback = function()
+            tween(duration * 0.25, crosshairTween, {scale = scaleLarge * bounceFactor}, {easing = tween.easing.linear, callback = function()
+                    tween(duration * 0.25, crosshairTween, {scale = scaleLarge}, {easing = tween.easing.linear})
+                end})
+        end})
+    
+    if crosshairTween.scale then
+        drawScaledCrosshairs(crosshairTween.scale)
+    else
+        drawScaledCrosshairs(scaleLarge)
+    end
+end
+
+function InGameUI:drawCrosshairsOn(unit)
+    local function drawScaledCrosshairs(aScale)
+        pushMatrix()
+        translate(unit.x, unit.y)
+        scale(aScale)
+        
+        pushStyle()
+        noFill()
+        strokeWidth(self.map.cellSize * 0.15)
+        stroke(255, 0, 0) -- Red crosshairs
+        
+        local circleRadius = self.map.cellSize * 0.4
+        
+        ellipse(0, 0, circleRadius * 2, circleRadius * 2)
+        
+        local lineLength = self.map.cellSize * 0.1
+        
+        line(-circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth(), 0) -- West line
+        line(circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth(), 0) -- East line
+        line(0, -circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth()) -- South line
+        line(0, circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth()) -- North line
+        
+        popStyle()
+        popMatrix()
+    end
+    
+    local duration = 0.5
+    local scaleSmall = 0.5
+    local scaleLarge = 1
+    local bounceFactor = 1.2
+    local crosshairTween = self.crosshairsAnimationTween
+    
+    tween(duration * 0.5, crosshairTween, {scale = scaleSmall}, {easing = tween.easing.linear, callback = function()
+            tween(duration * 0.25, crosshairTween, {scale = scaleLarge * bounceFactor}, {easing = tween.easing.linear, callback = function()
+                    tween(duration * 0.25, crosshairTween, {scale = scaleLarge}, {easing = tween.easing.linear})
+                end})
+        end})
+    
+    if crosshairTween.scale then
+        drawScaledCrosshairs(crosshairTween.scale)
+    else
+        drawScaledCrosshairs(scaleLarge)
+    end
+end
+
+function InGameUI:drawCrosshairsOn(unit)
+    local function drawScaledCrosshairs(aScale)
+        pushMatrix()
+        translate(unit.x, unit.y)
+        scale(aScale)
+        
+        pushStyle()
+        noFill()
+        strokeWidth(self.map.cellSize * 0.15)
+        stroke(255, 0, 0) -- Red crosshairs
+        
+        local circleRadius = self.map.cellSize * 0.4
+        
+        ellipse(0, 0, circleRadius * 2, circleRadius * 2)
+        
+        local lineLength = self.map.cellSize * 0.1
+        
+        line(-circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth(), 0) -- West line
+        line(circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth(), 0) -- East line
+        line(0, -circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth()) -- South line
+        line(0, circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth()) -- North line
+        
+        popStyle()
+        popMatrix()
+    end
+    
+    local duration = 0.19
+    local scaleSmall = 1
+    local scaleLarge = 0.5
+    local bounceFactor = 10.2
+    local crosshairTween = self.crosshairsAnimationTween
+    
+    tween(duration * 0.5, crosshairTween, {scale = scaleSmall}, {easing = tween.easing.linear, callback = function()
+            tween(duration * 0.25, crosshairTween, {scale = scaleSmall * bounceFactor}, {easing = tween.easing.linear, callback = function()
+                    tween(duration * 0.25, crosshairTween, {scale = scaleSmall}, {easing = tween.easing.linear, callback = function() 
+                            self.crosshairsAnimationTween = {scale = 0.5}
+                    end})
+                end})
+        end})
+    
+    if crosshairTween.scale then
+        drawScaledCrosshairs(crosshairTween.scale)
+    else
+        drawScaledCrosshairs(scaleLarge)
+    end
+end
 
 function InGameUI:isAttackable(attacker, target)
     local attackerRow, attackerCol = self.map:pointToCellRowAndColumn(attacker.x, attacker.y)

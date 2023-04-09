@@ -87,18 +87,13 @@ function Game:attack(attacker, defender)
     defender.strength = defender.strength - attacker.strength
     if defender.strength <= 0 then
         self:removeUnit(defender)
-    else
-        attacker.strength = attacker.strength - defender.strength
-        if attacker.strength <= 0 then
-            self:removeUnit(attacker)
-        end
     end
 end
 
 function Game:removeUnit(unit)
-    for i, u in ipairs(self.units) do
+    for i, u in ipairs(self.unitManager.units) do
         if u == unit then
-            table.remove(self.units, i)
+            table.remove(self.unitManager.units, i)
             break
         end
     end

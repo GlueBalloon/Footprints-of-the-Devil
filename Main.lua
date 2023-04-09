@@ -5,9 +5,9 @@ function setup()
     parameter.watch("countdown")
     parameter.watch("selectedUnit")
     game = Game()
-  --  game.unitManager:createUnit("sapiens", 5, 400, HEIGHT/2, color(143, 236, 67, 226))
-  --  game.unitManager:createUnit("neanderthal", 7, WIDTH/2, 306, color(236, 67, 143, 222))
-  --  game.turnSystem:nextTurn()    
+    --  game.unitManager:createUnit("sapiens", 5, 400, HEIGHT/2, color(143, 236, 67, 226))
+    --  game.unitManager:createUnit("neanderthal", 7, WIDTH/2, 306, color(236, 67, 143, 222))
+    --  game.turnSystem:nextTurn()    
 end
 
 function draw()
@@ -19,7 +19,6 @@ end
 
 function touched(touch)
     if game.turnSystem.turnChangeAnimationInProgress then
-        print("nil unit!")
         game.inGameUI.selectedUnit = nil
         return
     end
@@ -50,9 +49,14 @@ function touched(touch)
             else
                 -- Check if another unit of the same team is touched
                 for _, unit in ipairs(units) do
-                    if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == game.turnSystem:getCurrentPlayer().team then
-                        game.inGameUI.selectedUnit = unit
-                        break
+                    if game:unitContainsPoint(unit, touch.x, touch.y) then
+                        if unit.team == game.turnSystem:getCurrentPlayer().team then
+                            game.inGameUI.selectedUnit = unit
+                        else if game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
+                                game:attack(game.inGameUI.selectedUnit, unit)
+                            end
+                            break 
+                        end
                     end
                 end
             end
