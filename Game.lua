@@ -5,14 +5,14 @@ Game = class()
 function Game:init()
     font("ArialRoundedMTBold")
     self.gameState = "inGame"
-    local cellsPerSide = 10
-    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.74
+    local cellsPerSide = 9
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.7
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
-    local aiPlayer = AIPlayer(2, "neanderthal", color(233, 77, 224, 222))
+    local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
     self.players = {player1, aiPlayer}
-    self.turnSystem = TurnSystem(self.players, 6)
+    self.turnSystem = TurnSystem(self.players, 5, 6)
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
     self.turnSystem.funcWhenTurnChanges = function() 
@@ -32,9 +32,12 @@ function Game:init()
     end
     self.saveManager = SaveManager()
     self.unitManager.units = self:generateRandomUnits(5, 5)   
-    self.turnIndicatorRect = vec4(mapX, mapY * 0.45, sideSize * 0.49, mapY * 0.45)
-    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.49), mapY * 0.45, sideSize * 0.49, mapY * 0.45)
+    local bottomButtonHeight = sideSize * 0.091
+    local bottomButtonY = mapY - (bottomButtonHeight * 1.2)
+    self.turnIndicatorRect = vec4(mapX, bottomButtonY, sideSize * 0.49, bottomButtonHeight)
+    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.49), bottomButtonY, sideSize * 0.49, bottomButtonHeight)
     self.timeLeftRect = vec4(mapX, (mapY * 1.1) + sideSize, sideSize * 0.65, mapY * 0.65)
+    self.movesLeftRect = vec4(mapX + (sideSize * 0.66), (mapY * 1.1) + sideSize, sideSize * 0.34, mapY * 0.45)
 end
 
 function Game:draw(deltaTime)
@@ -43,11 +46,15 @@ function Game:draw(deltaTime)
     end
     local turnPlayer = self.players[self.turnSystem.currentPlayerIndex]
     local tiRec, eRec, tlRec = self.turnIndicatorRect, self.endTurnRect, self.timeLeftRect
+    local mRec = self.movesLeftRect
+    local movesLeft = self.turnSystem.movesPerTurn - self.turnSystem.moveCounter
     self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
     self.inGameUI:drawTimeLeft(tlRec.x, tlRec.y, tlRec.z, tlRec.w, self.turnSystem.timeRemaining)
+    self.inGameUI:drawMovesLeft(mRec.x, mRec.y, mRec.z, mRec.w, movesLeft)
     self.inGameUI:drawUnitStatsPanel(10, 130, 200, 100, self.inGameUI.selectedUnit)
     self.inGameUI:drawAllUnits(self.unitManager.units)
+    self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeAnimation)
     self.turnSystem:update(deltaTime)
 end
@@ -75,6 +82,28 @@ function Game:unitContainsPoint(unit, x, y)
     
     return pointRow == unitRow and pointCol == unitCol
 end
+
+function Game:attack(attacker, defender)
+    defender.strength = defender.strength - attacker.strength
+    if defender.strength <= 0 then
+        self:removeUnit(defender)
+    else
+        attacker.strength = attacker.strength - defender.strength
+        if attacker.strength <= 0 then
+            self:removeUnit(attacker)
+        end
+    end
+end
+
+function Game:removeUnit(unit)
+    for i, u in ipairs(self.units) do
+        if u == unit then
+            table.remove(self.units, i)
+            break
+        end
+    end
+end
+
 
 function Game:saveGame(slot)
     local saveData = {

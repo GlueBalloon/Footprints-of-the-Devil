@@ -22,8 +22,8 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
         
         local elapsedTime = os.clock() - self.announcementStartTime
-        local fadeInDuration = 0.35 -- Adjust this value to control the fade-in speed
-        local timeBeforeFadeStarts = 0.5 -- Adjust this value to control the time before fade-out starts
+        local fadeInDuration = 0.2 -- Adjust this value to control the fade-in speed
+        local timeBeforeFadeStarts = 0.75 -- Adjust this value to control the time before fade-out starts
         local fadeOutDuration = 0.25 -- Adjust this value to control the fade-out speed
         
         local alpha = 255
@@ -41,7 +41,7 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         strokeWidth(8)       
         stroke(teamColor.r, teamColor.g, teamColor.b, alpha)
         fill(0, 0, 0, math.min(110, alpha * 0.8))
-        local rectSize = math.min(WIDTH, HEIGHT) * 0.69
+        local rectSize = self.map.width * 0.69
         roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
         -- team announcement
         local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
@@ -113,6 +113,70 @@ function InGameUI:drawUnit(unit)
     local spriteX = x + (spriteInset / 2)
     local spriteY = y + (spriteInset / 2)
     sprite(unit.icon, x, y, self.map.cellSize)
+    
+    -- Display strength number
+    local radius = 13
+    local textX = x + (self.map.cellSize * 0.1)
+    local textY = y + (self.map.cellSize * 0.90)
+    noStroke()
+    fill(236, 66, 66) -- Red dot
+    ellipse(textX, textY, radius * 2)
+    --ellipse(unit.x, unit.y, radius * 2) -- show unit x, y
+    fill(255) -- White text
+    fontSize(radius * 1.2)
+    textAlign(CENTER, CENTER)
+    text(unit.strength, textX, textY)
+    
+    popStyle()
+end
+
+function InGameUI:drawAttackableTargets(units)
+    pushStyle()
+    strokeWidth(3)
+    stroke(255, 0, 0) -- Red crosshairs
+    
+    for _, attacker in ipairs(units) do
+        if self.isActiveTeam(attacker.team) then
+            for _, target in ipairs(units) do
+                if attacker ~= target and attacker.team ~= target.team and self:isAttackable(attacker, target) then
+                    self:drawCrosshairsOn(target)
+                end
+            end 
+        end
+    end
+    
+    popStyle()
+end
+
+function InGameUI:drawCrosshairsOn(unit)
+    pushStyle()
+    noFill()
+    strokeWidth(self.map.cellSize * 0.15)
+    stroke(255, 0, 0) -- Red crosshairs
+    
+    local circleRadius = self.map.cellSize * 0.4
+    
+    ellipse(unit.x, unit.y, circleRadius * 2, circleRadius * 2)
+    
+    local lineLength = self.map.cellSize * 0.1
+    
+    line(unit.x - circleRadius - lineLength, unit.y, unit.x - circleRadius + lineLength + strokeWidth(), unit.y) -- West line
+    line(unit.x + circleRadius + lineLength, unit.y, unit.x + circleRadius - lineLength - strokeWidth(), unit.y) -- East line
+    line(unit.x, unit.y - circleRadius - lineLength, unit.x, unit.y - circleRadius + lineLength + strokeWidth()) -- South line
+    line(unit.x, unit.y + circleRadius + lineLength, unit.x, unit.y + circleRadius - lineLength - strokeWidth()) -- North line
+    
+    popStyle()
+end
+
+
+function InGameUI:isAttackable(attacker, target)
+    local attackerRow, attackerCol = self.map:pointToCellRowAndColumn(attacker.x, attacker.y)
+    local targetRow, targetCol = self.map:pointToCellRowAndColumn(target.x, target.y)
+    
+    local rowDelta = math.abs(targetRow - attackerRow)
+    local colDelta = math.abs(targetCol - attackerCol)
+    
+    return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
 end
 
 function InGameUI:highlightAvailableMoves(unit)
@@ -229,13 +293,13 @@ function InGameUI:drawTimeLeft(x, y, width, height, timeLeft)
     fontSize(self:fontSizeForWidth(self.fontSizingText, width))
     textAlign(CENTER, CENTER)
     strokeWidth(4)
-    stroke(196, 204, 220)
+    stroke(197, 189, 169)
     fill(61, 65, 81)
     rectMode(CORNER)
     roundRect(x + (width / 2), y + (height / 2), width, height)
     fill(0, 237)
     text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), (x + width / 2) -1, (y + height / 2) - 1)
-    fill(255, 255, 255)
+    fill(217, 213, 202)
     text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), x + width / 2, y + height / 2)
     popStyle()
 end
@@ -245,11 +309,11 @@ function InGameUI:drawMovesLeft(x, y, width, height, movesLeft)
     fontSize(self:fontSizeForWidth(self.fontSizingText, width))
     textAlign(CENTER, CENTER)
     
-    fill(0, 0, 0, 128)
+    fill(61, 65, 81)
     rectMode(CORNER)
-    rect(x, y, width, height)
+    roundRect(x + (width / 2), y + (height / 2), width, height)
     
-    fill(255, 255, 255)
+    fill(217, 213, 202)
     text("Moves Left: " .. movesLeft, x + width / 2, y + height / 2)
     popStyle()
 end

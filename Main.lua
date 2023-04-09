@@ -31,7 +31,8 @@ function touched(touch)
             local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, units)
             if validMove then
                 local unitX, unitY = game.map:cellRowAndColumnToPoint(row, col)
-                game.inGameUI.selectedUnit.x, game.inGameUI.selectedUnit.y = unitX + game.map.cellSize / 2, unitY + game.map.cellSize / 2
+                game.inGameUI.selectedUnit.x = unitX
+                game.inGameUI.selectedUnit.y = unitY
                 game.inGameUI.selectedUnit = nil
                 
                 game.turnSystem.moveCounter = game.turnSystem.moveCounter + 1
@@ -43,7 +44,7 @@ function touched(touch)
                     end
                 end
                 
-                if game.turnSystem.moveCounter >= teamUnits then
+                if game.turnSystem.moveCounter >= game.turnSystem.movesPerTurn then
                     game.turnSystem:nextTurn()
                 end
             else

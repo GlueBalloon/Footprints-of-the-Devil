@@ -1,7 +1,8 @@
 TurnSystem = class()
 
-function TurnSystem:init(players, timePerTurn)
+function TurnSystem:init(players, movesPerTurn, timePerTurn)
     self.players = players
+    self.movesPerTurn = movesPerTurn or 5
     self.currentPlayerIndex = 1
     self.moveCounter = 0
     self.timePerTurn = timePerTurn or 2

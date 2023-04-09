@@ -2,10 +2,12 @@
 Map = class()
 
 function Map:init(x, y, width, height, cellsPerSide)
-    self.gridSize = cellsPerSide
+    self.width = width or WIDTH * 0.45
+    self.height = height or HEIGHT * 0.45
+    self.gridSize = cellsPerSide or 12
     self.cellSize = math.min(width, height) / self.gridSize
-    self.offsetX = x
-    self.offsetY = y
+    self.offsetX = x or (WIDTH - width) / 2
+    self.offsetY = y or (HEIGHT - height) / 2
     self.terrain = {}
     self.units = {}
     self.cellColors = {}
@@ -115,8 +117,8 @@ function Map:pointToCellRowAndColumn(x, y)
 end
 
 function Map:cellRowAndColumnToPoint(row, col)
-    local x = self.offsetX + (col - 1) * self.cellSize
-    local y = self.offsetY + (row - 1) * self.cellSize
+    local x = self.offsetX + (self.cellSize / 2) + (col - 1) * self.cellSize
+    local y = self.offsetY + (self.cellSize / 2) + (row - 1) * self.cellSize
     return x, y
 end
 
