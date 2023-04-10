@@ -5,8 +5,9 @@ Game = class()
 function Game:init()
     font("ArialRoundedMTBold")
     self.gameState = "inGame"
+    local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
     local cellsPerSide = 9
-    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.7
+    local sideSize = (math.min(WIDTH, HEIGHT)) - buttonHeight * 2.5
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
@@ -31,14 +32,15 @@ function Game:init()
         return self.turnSystem:getCurrentTeam() == team
     end
     self.saveManager = SaveManager()
-    self.unitManager.units = self:generateRandomUnits(5, 5)   
-    local bottomButtonHeight = sideSize * 0.091
-    local bottomButtonY = mapY - (bottomButtonHeight * 1.2)
-    local topButtonY = (mapY * 1.0815) + sideSize
-    self.turnIndicatorRect = vec4(mapX, bottomButtonY, sideSize * 0.4915, bottomButtonHeight)
-    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.4915), bottomButtonY, sideSize * 0.4915, bottomButtonHeight)
-    self.timeLeftRect = vec4(mapX, topButtonY, sideSize * 0.65, bottomButtonHeight * 1.6)
-    self.movesLeftRect = vec4(mapX + (sideSize * 0.6652), topButtonY, sideSize * 0.338, mapY * 0.45)
+    self.unitManager.units = self:generateRandomUnits(5, 5)  
+    local buttonMargin = sideSize * 0.0091 
+    local bottomButtonWidth = (sideSize - buttonMargin) / 2
+    local bottomButtonY = mapY - buttonHeight - buttonMargin
+    local topButtonY = mapY + sideSize + buttonMargin
+    self.turnIndicatorRect = vec4(mapX, bottomButtonY, bottomButtonWidth, buttonHeight)
+    self.endTurnRect = vec4(mapX + bottomButtonWidth + buttonMargin, bottomButtonY, bottomButtonWidth, buttonHeight)
+    self.timeLeftRect = vec4(mapX, topButtonY, sideSize * 0.65, buttonHeight)
+    self.movesLeftRect = vec4(mapX + (sideSize * 0.65) + buttonMargin, topButtonY, sideSize * 0.35, buttonHeight)
 end
 
 function Game:draw(deltaTime)

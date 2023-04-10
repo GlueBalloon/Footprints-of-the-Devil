@@ -11,7 +11,9 @@ function InGameUI:init(map)
     self.fontSizingText = "abcdefghijklmnop"
     self.announcementStartTime = 0
     self.announcementTeam = nil
-    self.crosshairsAnimationTween = {scale = 0.5}
+    self.crosshairTweens = {}
+    self.uiStroke = color(197, 189, 169)
+    self.uiFill = color(61, 65, 81)
 end
 
 function InGameUI:announceTurn(team)
@@ -39,14 +41,14 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         
         -- frame with dark background
         rectMode(CENTER)
-        strokeWidth(8)       
-        stroke(teamColor.r, teamColor.g, teamColor.b, alpha)
-        fill(0, 0, 0, math.min(110, alpha * 0.8))
         local rectSize = self.map.width * 0.69
-        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
-        -- team announcement
         local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
         fontSize(sizedFont * 0.8)
+        noStroke()
+        fill(self.uiStroke.r, self.uiStroke.g, self.uiStroke.b, alpha)
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        -- team announcement
+
         textAlign(CENTER)
         local textStr = "Turn:\n" .. self.announcementTeam
         fill(0, 0, 0, math.min(110, alpha * 0.8))
@@ -134,7 +136,7 @@ end
 function InGameUI:drawAttackableTargets(units)
     pushStyle()
     strokeWidth(3)
-    stroke(255, 0, 0) -- Red crosshairs
+    stroke(255, 0, 0, 136) -- Red crosshairs
     
     for _, attacker in ipairs(units) do
         if self.isActiveTeam(attacker.team) then
@@ -158,7 +160,7 @@ function InGameUI:drawCrosshairsOn(unit)
         pushStyle()
         noFill()
         strokeWidth(self.map.cellSize * 0.15)
-        stroke(255, 0, 0) -- Red crosshairs
+        stroke(255, 0, 0, 194) -- Red crosshairs
         
         local circleRadius = self.map.cellSize * 0.4
         
@@ -175,27 +177,29 @@ function InGameUI:drawCrosshairsOn(unit)
         popMatrix()
     end
     
-    local duration = 0.55  -- Adjust this value to control the overall animation duration
-    local scaleSmall = 0.1  -- Adjust this value to control the initial scale
-    local scaleLarge = 1
-    local bounceFactor = 1.5  -- Adjust this value to control the bounce size
+    if not self.crosshairTweens[unit] then
+        local duration = 0.55  -- Adjust this value to control the overall animation duration
+        local scaleSmall = 0.1  -- Adjust this value to control the initial scale
+        local scaleLarge = 1
+        local bounceFactor = 1.5  -- Adjust this value to control the bounce size
+        self.crosshairTweens[unit] = {scale = scaleSmall}
+        -- Start the animation sequence for this unit's crosshair
+        tween(duration * 0.4, self.crosshairTweens[unit], {scale = scaleLarge}, {easing = tween.easing.backOut, callback = function()
+                tween(duration * 0.3, self.crosshairTweens[unit], {scale = scaleLarge * bounceFactor}, {easing = tween.easing.quadIn, callback = function()
+                        tween(duration * 0.3, self.crosshairTweens[unit], {scale = scaleLarge}, {easing = tween.easing.quadOut})
+                    end})
+            end})
+    end
     
-    local crosshairTween = self.crosshairsAnimationTween
-    
-    tween.reset(self.crosshairsAnimationTween) -- Reset the tween to play the animation again
-    tween(duration * 0.4, crosshairTween, {scale = scaleLarge}, {easing = tween.easing.backOut, callback = function()
-            tween(duration * 0.3, crosshairTween, {scale = scaleLarge * bounceFactor}, {easing = tween.easing.quadIn, callback = function()
-                    tween(duration * 0.3, crosshairTween, {scale = scaleLarge}, {easing = tween.easing.quadOut, callback = function() 
-                            self.crosshairsAnimationTween = {scale = 0.5}
-                        end})
-                end})
-        end})
-    
-    if crosshairTween.scale then
-        drawScaledCrosshairs(crosshairTween.scale)
+    if self.crosshairTweens[unit].scale then
+        drawScaledCrosshairs(self.crosshairTweens[unit].scale)
     else
         drawScaledCrosshairs(scaleLarge)
-    end   
+    end
+end
+
+function InGameUI:resetCrosshairTweens()
+    self.crosshairTweens = {}
 end
 
 function InGameUI:isAttackable(attacker, target)
@@ -297,8 +301,8 @@ end
 function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)    
     pushStyle()
     strokeWidth(3)
-    stroke(teamColor)
-    fill(teamColor.r, teamColor.g, teamColor.b, 200)
+    stroke(self.uiStroke)
+    fill(self.uiFill)
     roundRect(x + (width / 2), y + (height / 2), width, height)
     local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
     fontSize(newFontSize)
@@ -307,6 +311,11 @@ function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)
     text("turn: "..teamName, x - 1 + width / 2, y - 1 + height / 2)
     fill(255)
     text("turn: "..teamName, x + width / 2, y + height / 2)
+    fill(teamColor.r, teamColor.g, teamColor.b, 90)
+    text("turn: "..teamName, x + width / 2, y + height / 2)
+    stroke(fill())
+    fill(0, 0)
+    roundRect(x + (width / 2), y + (height / 2), width, height)
     popStyle()
 end
 
@@ -322,8 +331,8 @@ function InGameUI:drawTimeLeft(x, y, width, height, timeLeft)
     fontSize(self:fontSizeForWidth(self.fontSizingText, width))
     textAlign(CENTER, CENTER)
     strokeWidth(4)
-    stroke(197, 189, 169)
-    fill(61, 65, 81)
+    stroke(self.uiStroke)
+    fill(self.uiFill)
     rectMode(CORNER)
     roundRect(x + (width / 2), y + (height / 2), width, height)
     fill(0, 237)
@@ -335,10 +344,12 @@ end
 
 function InGameUI:drawMovesLeft(x, y, width, height, movesLeft)
     pushStyle()
-    fontSize(self:fontSizeForWidth(self.fontSizingText, width))
+    fontSize(self:fontSizeForWidth("Moves Left: 100", width))
     textAlign(CENTER, CENTER)
     
-    fill(61, 65, 81)
+    stroke(self.uiStroke)
+    fill(self.uiFill)
+    strokeWidth(3)
     rectMode(CORNER)
     roundRect(x + (width / 2), y + (height / 2), width, height)
     
@@ -351,11 +362,11 @@ function InGameUI:drawEndTurnButton(x, y, width, height)
     self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
     
     pushStyle()
-    fill(255, 0, 0, 62)
-    stroke(220, 104, 97)
+    stroke(self.uiStroke)
+    fill(self.uiFill)
     strokeWidth(3)
     roundRect(x + (width / 2), y + (height / 2), width, height)
-    fill(255)
+    fill(223, 158, 158)
     local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
     fontSize(newFontSize)
     textMode(CENTER)
