@@ -70,3 +70,65 @@ function touched(touch)
         end
     end
 end
+
+function touched(touch)
+    if game.turnSystem.turnChangeAnimationInProgress then
+        game.inGameUI.selectedUnit = nil
+        return
+    end
+    game.inGameUI:touched(touch)
+    local units = game.unitManager.units
+    if touch.state == BEGAN then
+        local row, col = game.map:pointToCellRowAndColumn(touch.x, touch.y)
+        if game.inGameUI.selectedUnit and row and col then
+            local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, units)
+            if validMove then
+                local unitX, unitY = game.map:cellRowAndColumnToPoint(row, col)
+                game.inGameUI.selectedUnit.x = unitX
+                game.inGameUI.selectedUnit.y = unitY
+                
+                -- Check for attackable units after a unit has moved
+                for _, unit in ipairs(units) do
+                    if game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
+                        game.inGameUI:drawCrosshairsOn(unit)
+                    end
+                end
+                
+                game.inGameUI.selectedUnit = nil
+                
+                game.turnSystem.moveCounter = game.turnSystem.moveCounter + 1
+                
+                local teamUnits = 0
+                for _, unit in ipairs(units) do
+                    if unit.team == game.turnSystem:getCurrentPlayer().team then
+                        teamUnits = teamUnits + 1
+                    end
+                end
+                
+                if game.turnSystem.moveCounter >= game.turnSystem.movesPerTurn then
+                    game.turnSystem:nextTurn()
+                end
+            else
+                -- Check if another unit of the same team is touched
+                for _, unit in ipairs(units) do
+                    if game:unitContainsPoint(unit, touch.x, touch.y) then
+                        if unit.team == game.turnSystem:getCurrentPlayer().team then
+                            game.inGameUI.selectedUnit = unit
+                        else if game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
+                                game:attack(game.inGameUI.selectedUnit, unit)
+                            end
+                            break 
+                        end
+                    end
+                end
+            end
+        else
+            for _, unit in ipairs(units) do
+                if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == game.turnSystem:getCurrentPlayer().team then
+                    game.inGameUI.selectedUnit = unit
+                    break
+                end
+            end
+        end
+    end
+end

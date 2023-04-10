@@ -34,10 +34,11 @@ function Game:init()
     self.unitManager.units = self:generateRandomUnits(5, 5)   
     local bottomButtonHeight = sideSize * 0.091
     local bottomButtonY = mapY - (bottomButtonHeight * 1.2)
-    self.turnIndicatorRect = vec4(mapX, bottomButtonY, sideSize * 0.49, bottomButtonHeight)
-    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.49), bottomButtonY, sideSize * 0.49, bottomButtonHeight)
-    self.timeLeftRect = vec4(mapX, (mapY * 1.1) + sideSize, sideSize * 0.65, mapY * 0.65)
-    self.movesLeftRect = vec4(mapX + (sideSize * 0.66), (mapY * 1.1) + sideSize, sideSize * 0.34, mapY * 0.45)
+    local topButtonY = (mapY * 1.0815) + sideSize
+    self.turnIndicatorRect = vec4(mapX, bottomButtonY, sideSize * 0.4915, bottomButtonHeight)
+    self.endTurnRect = vec4(mapX + sideSize - (sideSize * 0.4915), bottomButtonY, sideSize * 0.4915, bottomButtonHeight)
+    self.timeLeftRect = vec4(mapX, topButtonY, sideSize * 0.65, bottomButtonHeight * 1.6)
+    self.movesLeftRect = vec4(mapX + (sideSize * 0.6652), topButtonY, sideSize * 0.338, mapY * 0.45)
 end
 
 function Game:draw(deltaTime)
