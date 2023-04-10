@@ -13,7 +13,9 @@ function Map:init(x, y, width, height, cellsPerSide)
     self.cellColors = {}
     self.fakePixelsPerSide = 4
     self.smallCellSize = self.cellSize / self.fakePixelsPerSide -- Calculate the size of the smaller rects
-    
+    self.rowColToPointFunction = function(row, col)
+        return self:cellRowAndColumnToPoint(row, col)
+    end
     self.smallCellColors = {}
     --color pairs
     self.highestElevationColor = color(245, 222, 179)

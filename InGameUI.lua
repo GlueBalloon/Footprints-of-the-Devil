@@ -12,6 +12,7 @@ function InGameUI:init(map)
     self.announcementStartTime = 0
     self.announcementTeam = nil
     self.crosshairTweens = {}
+    self.badgeDamageTweens = {}
     self.uiStroke = color(197, 189, 169)
     self.uiFill = color(61, 65, 81)
 end
@@ -68,6 +69,54 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     end
 end
 
+function InGameUI:createDamageAnimation(unit, damage)
+    if not self.badgeDamageTweens[unit] then
+        self.badgeDamageTweens[unit] = { badgeSize = 1, floatingHP = nil }
+    end
+    
+    local anim = self.badgeDamageTweens[unit]
+    anim.badgeSize = 1.5 -- Start by increasing the badge size
+    
+    -- Tween badge size back to normal
+    tween(0.3, anim, { badgeSize = 1 }, tween.easing.expoOut)
+    
+    -- Create floating hit points text
+    anim.floatingHP = {
+        value = -damage,
+        y = 0,
+        opacity = 255
+    }
+    
+    -- Tween floating hit points text
+    tween(1, anim.floatingHP, { y = 20, opacity = 0 }, tween.easing.cubicOut, function()
+        anim.floatingHP = nil
+    end)
+end
+
+function InGameUI:drawStrengthBadge(unit)
+    local anim = self.badgeDamageTweens[unit] or { badgeSize = 1 }
+    
+    local badgeSize = 28 * anim.badgeSize
+    local badgeX = unit.x - (self.map.cellSize / 2 * 0.8)
+    local badgeY = unit.y + (self.map.cellSize / 2 * 0.8)
+    
+    -- Draw strength badge
+    noStroke()
+    fill(236, 66, 66)
+    ellipse(badgeX, badgeY, badgeSize)
+    
+    -- Draw strength value
+    fontSize(15 * anim.badgeSize)
+    fill(255)
+    text(tostring(unit.strength), badgeX, badgeY)
+    
+    -- Draw floating hit points text if available
+    if anim.floatingHP then
+        fill(255, 255, 255, anim.floatingHP.opacity)
+        fontSize(fontSize() * 1.5)
+        text(tostring(anim.floatingHP.value), badgeX, badgeY + (badgeSize / 2) - 5 + anim.floatingHP.y)
+    end
+end
 
 function InGameUI:drawAllUnits(units)
     if self.selectedUnit then
@@ -117,6 +166,7 @@ function InGameUI:drawUnit(unit)
     local spriteY = y + (spriteInset / 2)
     sprite(unit.icon, x, y, self.map.cellSize)
     
+    --[[
     -- Display strength number
     local radius = 13
     local textX = x + (self.map.cellSize * 0.1)
@@ -129,6 +179,9 @@ function InGameUI:drawUnit(unit)
     fontSize(radius * 1.2)
     textAlign(CENTER, CENTER)
     text(unit.strength, textX, textY)
+    ]]
+
+    self:drawStrengthBadge(unit)
     
     popStyle()
 end

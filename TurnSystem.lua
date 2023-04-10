@@ -1,6 +1,6 @@
 TurnSystem = class()
 
-function TurnSystem:init(players, movesPerTurn, timePerTurn)
+function TurnSystem:init(players, movesPerTurn, timePerTurn, invoker)
     self.players = players
     self.movesPerTurn = movesPerTurn or 5
     self.currentPlayerIndex = 1
@@ -10,6 +10,7 @@ function TurnSystem:init(players, movesPerTurn, timePerTurn)
     self.turnStartTime = os.clock()
     self.funcWhenTurnChanges = function() end
     self.turnChangeAnimationInProgress = false
+    self.invoker = invoker
 end
 
 function TurnSystem:update(deltaTime)
@@ -19,7 +20,8 @@ function TurnSystem:update(deltaTime)
     local timeElapsed = os.clock() - self.turnStartTime
     self.timeRemaining = self.timePerTurn - timeElapsed    
     if self.timeRemaining <= 0 then
-        self:nextTurn()
+        local nextTurnCommand = NextTurnCommand(self)
+        self.invoker:executeCommand(nextTurnCommand)
     end
 end
 
@@ -42,11 +44,19 @@ function TurnSystem:resetMoveCounter()
 end
 
 -- Modify the nextTurn function to reset the move counter
-function TurnSystem:nextTurn()
-    self.currentPlayerIndex = self.currentPlayerIndex % #self.players + 1
+function TurnSystem:nextTurn(team)
+    if team then
+        for i, player in ipairs(self.players) do
+            if player.team == team then
+                self.currentPlayerIndex = i
+                break
+            end
+        end
+    else
+        self.currentPlayerIndex = self.currentPlayerIndex % #self.players + 1
+    end
     self:resetMoveCounter()
     self.turnStartTime = os.clock()
     self.funcWhenTurnChanges()
     collectgarbage()
 end
-

@@ -14,7 +14,7 @@ function Game:init()
     local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
     self.players = {player1, aiPlayer}
     self.invoker = Invoker()
-    self.turnSystem = TurnSystem(self.players, 5, 6)
+    self.turnSystem = TurnSystem(self.players, 5, 6, self.invoker)
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
     self.turnSystem.funcWhenTurnChanges = function() 
@@ -27,13 +27,20 @@ function Game:init()
         self.turnSystem.turnChangeAnimationInProgress = false
     end
     self.inGameUI.nextTurnButtonAction = function()
-        self.turnSystem:nextTurn()
+        local nextTurnCommand = NextTurnCommand(self.turnSystem)
+        self.invoker:executeCommand(nextTurnCommand)
     end
     self.inGameUI.isActiveTeam = function(team)
         return self.turnSystem:getCurrentTeam() == team
     end
+    self.attackFunction = function(attacker, target)
+        self:attack(attacker, target)
+    end
+    self.touchedFunction = function(touch)
+        self:touched(touch)
+    end
     self.saveManager = SaveManager()
-    self.unitManager.units = self:generateRandomUnits(5, 5)  
+    self.unitManager.units = self:generateRandomUnits(9, 5)  
     local buttonMargin = sideSize * 0.0091 
     local bottomButtonWidth = (sideSize - buttonMargin) / 2
     local bottomButtonY = mapY - buttonHeight - buttonMargin
@@ -42,6 +49,7 @@ function Game:init()
     self.endTurnRect = vec4(mapX + bottomButtonWidth + buttonMargin, bottomButtonY, bottomButtonWidth, buttonHeight)
     self.timeLeftRect = vec4(mapX, topButtonY, sideSize * 0.65, buttonHeight)
     self.movesLeftRect = vec4(mapX + (sideSize * 0.65) + buttonMargin, topButtonY, sideSize * 0.35, buttonHeight)
+    self.turnSystem:nextTurn(self.players[1].team)
 end
 
 function Game:draw(deltaTime)
@@ -63,6 +71,11 @@ function Game:draw(deltaTime)
     self.turnSystem:update(deltaTime)
 end
 
+function Game:touchInput(touch)
+    local touchInputCommand = TouchInputCommand(touch, self.touchedFunction)
+    self.invoker:executeCommand(touchInputCommand)
+end
+
 function Game:serialize()
     -- Convert the game state to a string
     -- You can use a simple format, such as comma-separated values, or use a library to encode the data in JSON or another format
@@ -80,19 +93,55 @@ function Game:deserialize(gameData)
     end
 end
 
+
 function Game:unitContainsPoint(unit, x, y)
     local pointRow, pointCol = self.map:pointToCellRowAndColumn(x, y)
     local unitRow, unitCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
-    
     return pointRow == unitRow and pointCol == unitCol
 end
 
-function Game:attack(attacker, defender)
-    print("attack(attacker, defender): ", attacker, ", ", defender)
-    defender.strength = defender.strength - attacker.strength
-    if defender.strength <= 0 then
-        self:removeUnit(defender)
+function Game:attack(attacker, target)
+    print("attack(attacker, defender): ", attacker, ", ", target)
+    
+    if attacker.team == "sapiens" and target.team == "neanderthal" and self:isFlanked(target) then
+        target.strength = 0 -- Kill a flanked Neanderthal in one hit
+    else
+        target.strength = target.strength - attacker.strength
     end
+    
+    self.inGameUI:createDamageAnimation(target, attacker.strength)
+    
+    if target.strength <= 0 then
+        self:removeUnit(target)
+    end
+end
+
+function Game:isFlanked(neanderthal)
+    local flankingSapiens = 0
+    
+    -- Check orthogonally adjacent cells
+    local directions = {
+        {-self.map.cellSize, 0}, -- left
+        {self.map.cellSize, 0}, -- right
+        {0, -self.map.cellSize}, -- up
+        {0, self.map.cellSize} -- down
+    }
+    
+    for _, dir in ipairs(directions) do
+        local newX = neanderthal.x + dir[1]
+        local newY = neanderthal.y + dir[2]
+        
+        -- Check if newRow and newCol are within map bounds
+        for _, unit in ipairs(self.unitManager.units) do
+            if unit.team == "sapiens" and self:unitContainsPoint(unit, newX, newY) then
+                flankingSapiens = flankingSapiens + 1
+            end
+        end
+    end
+    
+    local flankedStatus = flankingSapiens >= 2
+    print("Game:isFlanked(neanderthal): ", flankedStatus)
+    return flankedStatus
 end
 
 function Game:removeUnit(unit)
@@ -128,8 +177,8 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
     
     for i = 1, sapiensCount do
         while true do
-            row = math.random(2, self.map.gridSize - 1)
-            col = math.random(2, math.floor(self.map.gridSize / 2) - 1)
+            row = math.random(2, self.map.gridSize)
+            col = math.random(2, math.floor(self.map.gridSize / 2))
             if not self:isCellOccupied(units, row, col) then
                 break
             end
@@ -167,4 +216,64 @@ function Game:isCellOccupied(units, row, col)
     return false
 end
 
-
+function Game:touched(touch)
+    if self.turnSystem.turnChangeAnimationInProgress then
+        self.inGameUI.selectedUnit = nil
+        return
+    end
+    self.inGameUI:touched(touch)
+    local units = self.unitManager.units
+    if touch.state == BEGAN then
+        local row, col = self.map:pointToCellRowAndColumn(touch.x, touch.y)
+        if self.inGameUI.selectedUnit and row and col then
+            local validMove = self.inGameUI:isValidMove(self.inGameUI.selectedUnit, row, col, units)
+            if validMove then
+                local moveCommand = MoveCommand(self.map.rowColToPointFunction, self.inGameUI.selectedUnit, row, col)
+                self.invoker:executeCommand(moveCommand)
+                
+                -- Check for attackable units after a unit has moved
+                for _, unit in ipairs(units) do
+                    if self.inGameUI:isAttackable(self.inGameUI.selectedUnit, unit) then
+                        self.inGameUI:drawCrosshairsOn(unit)
+                    else
+                        self.inGameUI.crosshairTweens[unit] = nil
+                    end 
+                end
+                
+                self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
+                
+                local teamUnits = 0
+                for _, unit in ipairs(units) do
+                    if unit.team == self.turnSystem:getCurrentPlayer().team then
+                        teamUnits = teamUnits + 1
+                    end
+                end
+            else
+                -- Check if another unit of the same team is touched
+                for _, unit in ipairs(units) do
+                    if game:unitContainsPoint(unit, touch.x, touch.y) then
+                        if unit.team == self.turnSystem:getCurrentPlayer().team then
+                            self.inGameUI.selectedUnit = unit
+                        elseif self.inGameUI:isAttackable(self.inGameUI.selectedUnit, unit) then
+                            local attackCommand = AttackCommand(self.attackFunction, self.inGameUI.selectedUnit, unit)
+                            self.invoker:executeCommand(attackCommand)
+                            self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
+                        end
+                        break
+                    end
+                end
+            end
+            if self.turnSystem.moveCounter >= self.turnSystem.movesPerTurn then
+                local nextTurnCommand = NextTurnCommand(self.turnSystem)
+                self.invoker:executeCommand(nextTurnCommand)
+            end
+        else
+            for _, unit in ipairs(units) do
+                if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == self.turnSystem:getCurrentPlayer().team then
+                    self.inGameUI.selectedUnit = unit
+                    break
+                end
+            end
+        end
+    end
+end

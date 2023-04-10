@@ -9,9 +9,9 @@
 		<string>Main</string>
 		<string>MainMenu</string>
 		<string>Game</string>
-		<string>CommandPattern</string>
-		<string>TurnSystem</string>
 		<string>InGameUI</string>
+		<string>InvokerAndCommands</string>
+		<string>TurnSystem</string>
 		<string>Unit_and_Manager</string>
 		<string>SaveManager</string>
 		<string>Map</string>

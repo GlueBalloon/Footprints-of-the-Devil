@@ -18,6 +18,11 @@ function draw()
 end
 
 function touched(touch)
+    game:touchInput(touch)
+end
+
+--[[
+function touched(touch)
     if game.turnSystem.turnChangeAnimationInProgress then
         game.inGameUI.selectedUnit = nil
         return
@@ -49,10 +54,6 @@ function touched(touch)
                         teamUnits = teamUnits + 1
                     end
                 end
-                
-                if game.turnSystem.moveCounter >= game.turnSystem.movesPerTurn then
-                    game.turnSystem:nextTurn()
-                end
             else
                 -- Check if another unit of the same team is touched
                 for _, unit in ipairs(units) do
@@ -62,10 +63,15 @@ function touched(touch)
                         elseif game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
                             local attackCommand = AttackCommand(game, game.inGameUI.selectedUnit, unit)
                             game.invoker:executeCommand(attackCommand)
+                            game.turnSystem.moveCounter = game.turnSystem.moveCounter + 1
                         end
                         break
                     end
                 end
+            end
+            if game.turnSystem.moveCounter >= game.turnSystem.movesPerTurn then
+                local nextTurnCommand = NextTurnCommand(game.turnSystem)
+                game.invoker:executeCommand(nextTurnCommand)
             end
         else
             for _, unit in ipairs(units) do
@@ -77,3 +83,4 @@ function touched(touch)
         end
     end
 end
+]]

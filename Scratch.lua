@@ -1,57 +1,55 @@
 --[[
+Here's the modified Game class and the new InputHandler class:
 
-a method called execute(). This interface will be the base for all command classes.
-lua
-Copy code
-Command = class()
+-- Game
+Game = class()
 
-function Command:init(receiver)
-self.receiver = receiver
-end
-
-function Command:execute()
--- This method will be overridden in concrete command classes
-end
-Create concrete command classes:
-For each action that a player can perform, create a concrete command class that implements the Command interface. These classes will contain the logic to execute the action.
-For example, if you have a "MoveUnitCommand":
+function Game:init()
+-- ... (the rest of the init function remains the same)
 
 lua
 Copy code
-MoveUnitCommand = class(Command)
-
-function MoveUnitCommand:init(receiver, unit, targetX, targetY)
-Command.init(self, receiver)
-self.unit = unit
-self.targetX = targetX
-self.targetY = targetY
+self.inputHandler = InputHandler(self)
 end
 
-function MoveUnitCommand:execute()
-self.receiver:moveUnit(self.unit, self.targetX, self.targetY)
-end
-Create an Invoker class:
-This class will be responsible for executing the commands and maintaining the history of executed commands.
-lua
-Copy code
-Invoker = class()
+-- ... (the rest of the Game class remains the same)
 
-function Invoker:init()
-self.commandHistory = {}
+function Game:touchInput(touch)
+local touchInputCommand = TouchInputCommand(self, touch)
+self.invoker:executeCommand(touchInputCommand)
 end
 
-function Invoker:executeCommand(command)
-command:execute()
-table.insert(self.commandHistory, command)
-end
-Modify your game to use the Command pattern:
-Now you'll need to update your game to use commands instead of calling methods directly. Create an instance of the Invoker class and use it to execute commands.
-lua
-Copy code
-local invoker = Invoker()
+-- InputHandler
+InputHandler = class()
 
--- Instead of calling game:moveUnit(...) directly, create a command and execute it through the invoker
-local moveUnitCommand = MoveUnitCommand(game, unit, targetX, targetY)
-invoker:executeCommand(moveUnitCommand)
-By following these steps, you can start implementing the Command pattern in your game. Remember to replace all direct method calls with command objects and execute those commands using the invoker. This will help you create a more flexible and maintainable game architecture that can handle complex features such as AI, undo/redo functionality, or multiplayer.
+function InputHandler:init(game)
+self.game = game
+end
+
+function InputHandler:touched(touch)
+-- (Move the touched function contents here and replace "game" with "self.game")
+-- ... (the rest of the touched function remains the same)
+end
+
+Now, let's create a TouchInputCommand class:
+
+-- TouchInputCommand
+TouchInputCommand = class(Command)
+
+function TouchInputCommand:init(game, touch)
+self.game = game
+self.touch = touch
+end
+
+function TouchInputCommand:execute()
+self.game.inputHandler:touched(self.touch)
+end
+
+Finally, update the global touched function to call the Game's touchInput method:
+
+function touched(touch)
+game:touchInput(touch)
+end
+
+This structure keeps the code organized and modular. The InputHandler class now handles touch inputs, and the TouchInputCommand allows you to easily extend it to handle multiplayer inputs in the future.
 ]]
