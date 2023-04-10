@@ -47,5 +47,6 @@ function TurnSystem:nextTurn()
     self:resetMoveCounter()
     self.turnStartTime = os.clock()
     self.funcWhenTurnChanges()
+    collectgarbage()
 end
 

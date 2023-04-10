@@ -13,6 +13,7 @@ function Game:init()
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
     local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
     self.players = {player1, aiPlayer}
+    self.invoker = Invoker()
     self.turnSystem = TurnSystem(self.players, 5, 6)
     self.unitManager = UnitManager(self.players)
     self.inGameUI = InGameUI(self.map)
@@ -87,6 +88,7 @@ function Game:unitContainsPoint(unit, x, y)
 end
 
 function Game:attack(attacker, defender)
+    print("attack(attacker, defender): ", attacker, ", ", defender)
     defender.strength = defender.strength - attacker.strength
     if defender.strength <= 0 then
         self:removeUnit(defender)
@@ -94,6 +96,7 @@ function Game:attack(attacker, defender)
 end
 
 function Game:removeUnit(unit)
+    print("removeUnit(unit): ", unit)
     for i, u in ipairs(self.unitManager.units) do
         if u == unit then
             table.remove(self.unitManager.units, i)
@@ -134,7 +137,7 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
         local tColor = self.players[1].teamColor
         local uColor = color(tColor.r, tColor.g, tColor.b, 24)
-        table.insert(units, Unit(self.players[1].team, 5, unitX, unitY, uColor, asset.Sapiens))
+        table.insert(units, Unit(self.players[1].team, 3, unitX, unitY, uColor, asset.Sapiens))
     end
     
     for i = 1, neanderthalCount do

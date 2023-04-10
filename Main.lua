@@ -29,9 +29,8 @@ function touched(touch)
         if game.inGameUI.selectedUnit and row and col then
             local validMove = game.inGameUI:isValidMove(game.inGameUI.selectedUnit, row, col, units)
             if validMove then
-                local unitX, unitY = game.map:cellRowAndColumnToPoint(row, col)
-                game.inGameUI.selectedUnit.x = unitX
-                game.inGameUI.selectedUnit.y = unitY
+                local moveCommand = MoveCommand(game, game.inGameUI.selectedUnit, row, col)
+                game.invoker:executeCommand(moveCommand)
                 
                 -- Check for attackable units after a unit has moved
                 for _, unit in ipairs(units) do
@@ -60,11 +59,11 @@ function touched(touch)
                     if game:unitContainsPoint(unit, touch.x, touch.y) then
                         if unit.team == game.turnSystem:getCurrentPlayer().team then
                             game.inGameUI.selectedUnit = unit
-                        else if game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
-                                game:attack(game.inGameUI.selectedUnit, unit)
-                            end
-                            break 
+                        elseif game.inGameUI:isAttackable(game.inGameUI.selectedUnit, unit) then
+                            local attackCommand = AttackCommand(game, game.inGameUI.selectedUnit, unit)
+                            game.invoker:executeCommand(attackCommand)
                         end
+                        break
                     end
                 end
             end
