@@ -2,7 +2,7 @@ TurnSystem = class()
 
 function TurnSystem:init(players, movesPerTurn, timePerTurn, invoker)
     self.players = players
-    self.movesPerTurn = movesPerTurn or 5
+    self.movesPerTurn = movesPerTurn or 8
     self.currentPlayerIndex = 1
     self.moveCounter = 0
     self.timePerTurn = timePerTurn or 2
@@ -38,11 +38,6 @@ function TurnSystem:startTurn()
     print("Player " .. currentPlayer.id .. "'s turn")
 end
 
--- Add a new function to reset the move counter
-function TurnSystem:resetMoveCounter()
-    self.moveCounter = 0
-end
-
 -- Modify the nextTurn function to reset the move counter
 function TurnSystem:nextTurn(team)
     if team then
@@ -55,8 +50,7 @@ function TurnSystem:nextTurn(team)
     else
         self.currentPlayerIndex = self.currentPlayerIndex % #self.players + 1
     end
-    self:resetMoveCounter()
-    self.turnStartTime = os.clock()
+    self.moveCounter = 0
     self.funcWhenTurnChanges()
     collectgarbage()
 end

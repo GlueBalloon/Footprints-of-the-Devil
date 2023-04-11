@@ -8,7 +8,10 @@ function InGameUI:init(map)
     self.selectedUnit = nil
     self.isActiveTeam = function(team) end
     self.nextTurnButtonAction = function() end
+    self.isCellOccupied = function(row, col) end
     self.fontSizingText = "abcdefghijklmnop"
+    self.sapiensIcon = asset.Sapiens
+    self.neanderthalIcon = asset.Neanderthal
     self.announcementStartTime = 0
     self.announcementTeam = nil
     self.crosshairTweens = {}
@@ -86,7 +89,6 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
                 fadeCompleteCallback()
             end
         end
-        
     end
 end
 
@@ -305,6 +307,39 @@ function InGameUI:drawCrosshairsOn(unit, attackable)
     else
         drawScaledCrosshairs(scaleLarge)
     end
+    
+    -- Draw flanking indicators if the unit is a Neanderthal unit
+    
+    if unit.team == "neanderthal" and self.isActiveTeam("sapiens") then
+        local row, col = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+        local iconOffset = self.map.cellSize * 0.85
+        local offsets = {
+            {x = 0, y = iconOffset},
+            {x = 0, y = -iconOffset},
+            {x = iconOffset, y = 0},
+            {x = -iconOffset, y = 0},
+        }
+        
+        for _, offset in ipairs(offsets) do
+            local newRow, newCol = self.map:pointToCellRowAndColumn(unit.x + offset.x, unit.y + offset.y)
+            if not self.isCellOccupied(newRow, newCol) then
+                self:drawFlankingIndicator(unit, offset.x, offset.y)
+            end
+        end
+    end
+end
+
+function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
+    local iconSize = self.map.cellSize * 0.75
+    local iconX = unit.x + offsetX
+    local iconY = unit.y + offsetY
+    
+    pushStyle()
+    spriteMode(CENTER)
+    rectMode(CENTER)
+    tint(255, 79)
+    sprite(self.sapiensIcon, iconX, iconY, iconSize)
+    popStyle()
 end
 
 function InGameUI:resetCrosshairTweens()

@@ -20,11 +20,12 @@ function Game:init()
     self.turnSystem.funcWhenTurnChanges = function() 
         self.inGameUI.selectedUnit = nil
         self.turnSystem.turnChangeAnimationInProgress = true
-        self.turnSystem.timeRemaining = 0.0
+        self.turnSystem.timeRemaining = self.turnSystem.timePerTurn
         self.inGameUI:announceTurn(self.turnSystem:getCurrentTeam())
     end
-    self.endTurnChangeAnimation = function()
+    self.endTurnChangeFunction = function()
         self.turnSystem.turnChangeAnimationInProgress = false
+        self.turnSystem.turnStartTime = os.clock()
     end
     self.inGameUI.nextTurnButtonAction = function()
         local nextTurnCommand = NextTurnCommand(self.turnSystem)
@@ -32,6 +33,9 @@ function Game:init()
     end
     self.inGameUI.isActiveTeam = function(team)
         return self.turnSystem:getCurrentTeam() == team
+    end
+    self.inGameUI.isCellOccupied = function(row, col)
+        return self:isCellOccupied(self.unitManager.units, row, col)
     end
     self.attackFunction = function(attacker, target)
         self:attack(attacker, target)
@@ -65,7 +69,7 @@ function Game:draw(deltaTime)
     self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
     self.inGameUI:drawMovesLeft(movesLeft)
-    self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeAnimation)
+    self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeFunction)
     self.turnSystem:update(deltaTime)
 end
 
@@ -184,7 +188,7 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
         local tColor = self.players[1].teamColor
         local uColor = color(tColor.r, tColor.g, tColor.b, 24)
-        table.insert(units, Unit(self.players[1].team, 3, unitX, unitY, uColor, asset.Sapiens))
+        table.insert(units, Unit(self.players[1].team, 3, unitX, unitY, uColor, self.inGameUI.sapiensIcon))
     end
     
     for i = 1, neanderthalCount do
@@ -198,7 +202,7 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
         unitX, unitY = self.map:cellRowAndColumnToPoint(row, col)
         local tColor = self.players[2].teamColor
         local uColor = color(tColor.r, tColor.g, tColor.b, 24)
-        table.insert(units, Unit(self.players[2].team, 7, unitX, unitY, uColor, asset.Neanderthal))
+        table.insert(units, Unit(self.players[2].team, 7, unitX, unitY, uColor, self.inGameUI.neanderthalIcon))
     end
     
     return units
@@ -208,7 +212,7 @@ function Game:isCellOccupied(units, row, col)
     for _, unit in ipairs(units) do
         local unitRow, unitCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
         if row == unitRow and col == unitCol then
-            return true
+            return unit
         end
     end
     return false

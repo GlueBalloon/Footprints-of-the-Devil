@@ -1,7 +1,8 @@
 -- Footprints Of The Devil
 
 -- Main
-function setup()    
+function setup()   
+    viewer.mode = FULLSCREEN 
     parameter.watch("countdown")
     parameter.watch("selectedUnit")
     game = Game()
