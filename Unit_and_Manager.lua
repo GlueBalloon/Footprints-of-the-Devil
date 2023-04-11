@@ -4,6 +4,7 @@ Unit = class()
 -- Unit Class
 function Unit:init(team, strength, x, y, aColor, icon)
     self.team = team
+    self.team = team
     self.strength = strength
     self.x = x
     self.y = y

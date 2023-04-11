@@ -12,9 +12,10 @@ function InGameUI:init(map)
     self.announcementStartTime = 0
     self.announcementTeam = nil
     self.crosshairTweens = {}
-    self.badgeDamageTweens = {}
+    self.damageAnimations = {}
     self.uiStroke = color(197, 189, 169)
     self.uiFill = color(61, 65, 81)
+    self.alreadyCrosshaired = {}
 end
 
 function InGameUI:announceTurn(team)
@@ -70,11 +71,16 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
 end
 
 function InGameUI:createDamageAnimation(unit, damage)
-    if not self.badgeDamageTweens[unit] then
-        self.badgeDamageTweens[unit] = { badgeSize = 1, floatingHP = nil }
-    end
+    local anim = {
+        unit = unit,
+        badgeSize = 1,
+        floatingHP = nil,
+        active = true
+    }
     
-    local anim = self.badgeDamageTweens[unit]
+    -- Add the animation to damageAnimations table
+    table.insert(self.damageAnimations, anim)
+    
     anim.badgeSize = 1.5 -- Start by increasing the badge size
     
     -- Tween badge size back to normal
@@ -88,34 +94,49 @@ function InGameUI:createDamageAnimation(unit, damage)
     }
     
     -- Tween floating hit points text
-    tween(1, anim.floatingHP, { y = 20, opacity = 0 }, tween.easing.cubicOut, function()
+    local animationDuration = 1.5 -- Change this value to control the time until the text vanishes
+    local floatingDistance = 25 -- Change this value to control the distance the floating number floats
+    tween(animationDuration, anim.floatingHP, { y = floatingDistance, opacity = 0 }, tween.easing.cubicOut, function()
         anim.floatingHP = nil
+        anim.active = false
     end)
+
 end
 
-function InGameUI:drawStrengthBadge(unit)
-    local anim = self.badgeDamageTweens[unit] or { badgeSize = 1 }
+function InGameUI:drawStrengthBadge(unit, anim)
     
-    local badgeSize = 28 * anim.badgeSize
+    local badgeSize = 28
+    if not unit then
+        unit = anim.unit
+        badgeSize = 28 * anim.badgeSize
+    end
+    
     local badgeX = unit.x - (self.map.cellSize / 2 * 0.8)
     local badgeY = unit.y + (self.map.cellSize / 2 * 0.8)
     
-    -- Draw strength badge
-    noStroke()
-    fill(236, 66, 66)
-    ellipse(badgeX, badgeY, badgeSize)
+    pushStyle()
+    fontSize(badgeSize * 0.7)
     
-    -- Draw strength value
-    fontSize(15 * anim.badgeSize)
-    fill(255)
-    text(tostring(unit.strength), badgeX, badgeY)
+    -- Draw strength badge
+    if unit.strength ~= 0 then
+        noStroke()
+        fill(236, 66, 66)
+        ellipse(badgeX, badgeY, badgeSize)
+        
+        -- Draw strength value
+        fill(255)
+        text(tostring(unit.strength), badgeX, badgeY)
+    end
     
     -- Draw floating hit points text if available
-    if anim.floatingHP then
+    if anim and anim.floatingHP then
         fill(255, 255, 255, anim.floatingHP.opacity)
         fontSize(fontSize() * 1.5)
         text(tostring(anim.floatingHP.value), badgeX, badgeY + (badgeSize / 2) - 5 + anim.floatingHP.y)
     end
+    
+    popStyle()
+    
 end
 
 function InGameUI:drawAllUnits(units)
@@ -125,9 +146,26 @@ function InGameUI:drawAllUnits(units)
     end
     
     for _, unit in ipairs(units) do
-        self:drawUnit(unit)
+        if unit ~= self.selectedUnit then
+            self:drawUnit(unit)
+        end
+    end
+    
+    -- Draw selected unit last
+    if self.selectedUnit then
+        self:drawUnit(self.selectedUnit)
+    end
+    
+    -- Draw badges for active animations
+    for i, anim in ipairs(self.damageAnimations) do
+        if anim.active then
+            self:drawStrengthBadge(nil, anim)
+        else
+            table.remove(self.damageAnimations, i)
+        end
     end
 end
+
 
 function InGameUI:drawUnit(unit)
     
@@ -158,28 +196,17 @@ function InGameUI:drawUnit(unit)
     roundRect(rectX + (rectSize * 0.5), rectY + (rectSize * 0.5), rectSize, rectSize, rectSize * 0.25)
     
     -- Draw the unit sprite
-    local spriteInset = self.map.cellSize * 0.15
-    spriteMode(CORNER)
-    local spriteSizeX = self.map.cellSize - spriteInset
-    local spriteSizeY = spriteSizeX
-    local spriteX = x + (spriteInset / 2)
-    local spriteY = y + (spriteInset / 2)
-    sprite(unit.icon, x, y, self.map.cellSize)
-    
-    --[[
-    -- Display strength number
-    local radius = 13
-    local textX = x + (self.map.cellSize * 0.1)
-    local textY = y + (self.map.cellSize * 0.90)
-    noStroke()
-    fill(236, 66, 66) -- Red dot
-    ellipse(textX, textY, radius * 2)
-    --ellipse(unit.x, unit.y, radius * 2) -- show unit x, y
-    fill(255) -- White text
-    fontSize(radius * 1.2)
-    textAlign(CENTER, CENTER)
-    text(unit.strength, textX, textY)
-    ]]
+
+    spriteMode(CENTER)
+    rectMode(CENTER)
+    local unitSize = self.map.cellSize
+    if unit == self.selectedUnit then
+        unitSize = unitSize * 1.2
+        noStroke()
+        fill(236, 208, 67)
+        roundRect(unit.x, unit.y, rectSize - strokeWidth(), rectSize - strokeWidth(), rectSize * 0.25)
+    end
+    sprite(unit.icon, unit.x, unit.y, unitSize)
 
     self:drawStrengthBadge(unit)
     
@@ -187,33 +214,42 @@ function InGameUI:drawUnit(unit)
 end
 
 function InGameUI:drawAttackableTargets(units)
-    pushStyle()
-    strokeWidth(3)
-    stroke(255, 0, 0, 136) -- Red crosshairs
-    
+    self.alreadyCrosshaired = {}
     for _, attacker in ipairs(units) do
         if self.isActiveTeam(attacker.team) then
             for _, target in ipairs(units) do
                 if attacker ~= target and attacker.team ~= target.team and self:isAttackable(attacker, target) then
-                    self:drawCrosshairsOn(target)
+                    if self.selectedUnit and self:isAttackable(self.selectedUnit, target) then
+                        if attacker == self.selectedUnit then
+                            self:drawCrosshairsOn(target, true)
+                            self.alreadyCrosshaired[target] = true
+                        end
+                    elseif not self.alreadyCrosshaired[target] then
+                        self:drawCrosshairsOn(target, false)
+                        self.alreadyCrosshaired[target] = true
+                    end
                 end
             end 
         end
     end
-    
-    popStyle()
 end
 
-function InGameUI:drawCrosshairsOn(unit)
+function InGameUI:drawCrosshairsOn(unit, attackable)
     local function drawScaledCrosshairs(aScale)
-        pushMatrix()
-        translate(unit.x, unit.y)
-        scale(aScale)
-        
         pushStyle()
+        pushMatrix()
+        
         noFill()
         strokeWidth(self.map.cellSize * 0.15)
-        stroke(255, 0, 0, 194) -- Red crosshairs
+        translate(unit.x, unit.y)
+        scale(aScale)
+        if attackable then
+            scale(aScale)
+            stroke(255, 0, 0, 194) -- Red crosshairs
+        else
+            scale(aScale * 0.85)
+            stroke(98, 205) -- Gray crosshairs
+        end
         
         local circleRadius = self.map.cellSize * 0.4
         

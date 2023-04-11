@@ -106,7 +106,7 @@ function Game:attack(attacker, target)
     if attacker.team == "sapiens" and target.team == "neanderthal" and self:isFlanked(target) then
         target.strength = 0 -- Kill a flanked Neanderthal in one hit
     else
-        target.strength = target.strength - attacker.strength
+        target.strength = math.max(0, target.strength - attacker.strength)
     end
     
     self.inGameUI:createDamageAnimation(target, attacker.strength)
@@ -234,11 +234,12 @@ function Game:touched(touch)
                 -- Check for attackable units after a unit has moved
                 for _, unit in ipairs(units) do
                     if self.inGameUI:isAttackable(self.inGameUI.selectedUnit, unit) then
-                        self.inGameUI:drawCrosshairsOn(unit)
+                        self.inGameUI:drawCrosshairsOn(unit, true)
                     else
                         self.inGameUI.crosshairTweens[unit] = nil
                     end 
                 end
+                
                 
                 self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
                 
