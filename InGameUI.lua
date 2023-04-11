@@ -30,7 +30,7 @@ function InGameUI:init(map)
     fontSize(largeFont)
     local largeW, largeH = textSize("0.0") 
     self.countdownSpecs = {
-        color = color(217, 211, 202, 121),
+        color = color(214, 178, 153, 138),
         leftX = self.map.offsetX + (self.map.width * 0.5),
         rightX = self.map.offsetX + (self.map.width * 0.5),
         smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
@@ -88,6 +88,8 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         noStroke()
         fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
         roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        fill(203, currentGrayColorAlpha)
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
         -- team announcement
         
         textAlign(CENTER)
@@ -143,7 +145,7 @@ end
 
 function InGameUI:drawStrengthBadge(unit, anim)
     
-    local badgeSize = 18
+    local badgeSize = self.map.cellSize * 0.32
     if not unit then
         unit = anim.unit
         badgeSize = 28 * anim.badgeSize
@@ -220,7 +222,7 @@ function InGameUI:drawUnit(unit)
     
     -- Draw the background rectangle
     pushStyle()
-    strokeWidth(self.map.cellSize * 0.06)
+    strokeWidth(self.map.cellSize * 0.08)
     local rectInset = self.map.cellSize * 0.05
     local rectSize = self.map.cellSize - rectInset
     local rectX = x + (rectInset / 2)
