@@ -530,3 +530,43 @@ function InGameUI:isTouchWithinEndTurnButton(touch)
     and touch.y >= bounds.y and touch.y <= bounds.y + bounds.height
 end
 
+function InGameUI:drawEndTurnButton()
+    pushStyle()
+    rectMode(CENTER)
+    local gapSize = (math.max(WIDTH, HEIGHT) - self.map.width) / 2
+    local gapMargin = gapSize * 0.1
+    local buttonSide = gapSize - (gapMargin * 2)
+    if CurrentOrientation == LANDSCAPE_LEFT or 
+    CurrentOrientation == LANDSCAPE_RIGHT then       
+        self.endTurnButtonBounds = {
+            x = self.map.offsetX + self.map.width + ((gapSize) / 2), 
+            y = self.map.offsetY + (self.map.width * 0.7), 
+            width = buttonSide, 
+            height = buttonSide}
+    end
+    local spec = self.endTurnButtonBounds
+    --self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
+    print(spec.x, spec.y, spec.width, spec.height, gapSize / 8)
+    stroke(self.uiStroke)
+    fill(self.uiFill)
+    strokeWidth(3)
+    roundRect(spec.x, spec.y, spec.width, spec.height, gapSize / 8)
+    fill(223, 158, 158)
+    local newFontSize = self:fontSizeForWidth("end\nturn", spec.width * 0.4)
+    fontSize(newFontSize)
+    textMode(CENTER)
+    text("end\nturn", spec.x, spec.y)
+    popStyle()
+end
+
+function InGameUI:isTouchWithinEndTurnButton(touch)
+    local bounds = self.endTurnButtonBounds
+    print(bounds.x, "-", bounds.y, "-", bounds.width, "-", bounds.height)
+    local halfW, halfH = bounds.width / 2, bounds.height / 2
+    local leftX, rightX = bounds.x - halfW, bounds.x + halfW
+    local topY, bottomY = bounds.y + halfH, bounds.y - halfH
+    fill(236, 67, 218)
+    rect(bounds.x, bounds.y, bounds.width, bounds.height)
+    return touch.x >= leftX and touch.x <= rightX
+    and touch.y >= bottomY and touch.y <= topY
+end

@@ -5,9 +5,10 @@ Game = class()
 function Game:init()
     font("ArialRoundedMTBold")
     self.gameState = "inGame"
-    local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
+   -- local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
+    local buttonHeight = 0
     local cellsPerSide = 9
-    local sideSize = (math.min(WIDTH, HEIGHT)) - buttonHeight * 1.7
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.92
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize + buttonHeight) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
@@ -63,7 +64,7 @@ function Game:draw(deltaTime)
     local tiRec, eRec = self.turnIndicatorRect, self.endTurnRect
     local mRec = self.movesLeftRect
     local movesLeft = self.turnSystem.movesPerTurn - self.turnSystem.moveCounter
-    self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
+    --self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
     self.inGameUI:drawAllUnits(self.unitManager.units)
     self.inGameUI:drawAttackableTargets(self.unitManager.units)
