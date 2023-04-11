@@ -19,7 +19,7 @@ function InGameUI:init(map)
     self.uiStroke = color(197, 189, 169)
     self.uiFill = color(61, 65, 81)
     self.alreadyCrosshaired = {}
-    local countdownsW = self.map.cellSize * 4
+    local countdownsW = self.map.cellSize * 5.25
     local largeText = "0.0"
     local smallText = "timer timer timer"
     local smallFont = self:fontSizeForWidth("timer timer", countdownsW)
@@ -30,9 +30,9 @@ function InGameUI:init(map)
     fontSize(largeFont)
     local largeW, largeH = textSize("0.0") 
     self.countdownSpecs = {
-        color = color(217, 213, 202, 94),
-        leftX = self.map.offsetX + (largeW * 0.55),
-        rightX = self.map.offsetX + self.map.width - (largeW * 0.4),
+        color = color(217, 211, 202, 121),
+        leftX = self.map.offsetX + (self.map.width * 0.5),
+        rightX = self.map.offsetX + (self.map.width * 0.5),
         smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
         largeY = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
         smallFont = smallFont,
@@ -45,53 +45,7 @@ function InGameUI:announceTurn(team)
     self.announcementStartTime = os.clock()
     self.announcementTeam = team
 end
---[[
-function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
-    if self.announcementTeam then
-        
-        local elapsedTime = os.clock() - self.announcementStartTime
-        local fadeInDuration = 0.2 -- Adjust this value to control the fade-in speed
-        local timeBeforeFadeStarts = 0.75 -- Adjust this value to control the time before fade-out starts
-        local fadeOutDuration = 0.25 -- Adjust this value to control the fade-out speed
-        
-        local alpha = 255
-        if elapsedTime < fadeInDuration then
-            alpha = 255 * (elapsedTime / fadeInDuration)
-        elseif elapsedTime > timeBeforeFadeStarts then
-            local fadeOutTime = elapsedTime - timeBeforeFadeStarts
-            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
-        end
-        
-        pushStyle()
-        
-        -- frame with dark background
-        rectMode(CENTER)
-        local rectSize = self.map.width * 0.69
-        local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
-        fontSize(sizedFont * 0.8)
-        noStroke()
-        fill(self.uiStroke.r, self.uiStroke.g, self.uiStroke.b, alpha)
-        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
-        -- team announcement
 
-        textAlign(CENTER)
-        local textStr = "Turn:\n" .. self.announcementTeam
-        fill(0, 0, 0, math.min(110, alpha * 0.8))
-        text(textStr, (WIDTH / 2) - 1, (HEIGHT / 2) - 1)
-        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
-        text(textStr, WIDTH / 2, HEIGHT / 2)
-        
-        popStyle()
-        
-        if alpha <= 0 then
-            self.announcementTeam = nil
-            if fadeCompleteCallback then
-                fadeCompleteCallback()
-            end
-        end
-    end
-end
-]]
 function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
         
@@ -153,67 +107,7 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         end
     end
 end
---[[
-function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
-    if self.announcementTeam then
-        
-        local elapsedTime = os.clock() - self.announcementStartTime
-        local startingScale = 0.8 -- Adjust this value to control the initial size
-        local scaleSpeed = 1.5 -- Adjust this value to control the speed of scaling up
-        local timeFadeoutBegins = 0.75 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 1.0 -- Adjust this value to control the time when fade-out ends
-        
-        local fadeInDuration = 0.2 -- Adjust this value to control the fade-in speed
-        local fadeOutDuration = timeFadeoutEnds - timeFadeoutBegins -- Calculate fade-out duration based on the provided values
-        
-        local alpha = 255
-        if elapsedTime < fadeInDuration then
-            alpha = 255 * (elapsedTime / fadeInDuration)
-        elseif elapsedTime > timeFadeoutBegins then
-            local fadeOutTime = elapsedTime - timeFadeoutBegins
-            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
-        end
-        
-        local currentScale = startingScale + scaleSpeed * elapsedTime
-        local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeFadeoutBegins))
-        local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha)
-        
-        pushMatrix()
-        pushStyle()
-        
-        translate(WIDTH / 2, HEIGHT / 2)
-        scale(currentScale)
-        
-        -- frame with dark background
-        rectMode(CENTER)
-        local rectSize = self.map.width * 0.69 / currentScale
-        local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
-        fontSize(sizedFont * 0.8)
-        noStroke()
-        fill(self.uiStroke.r, self.uiStroke.g, self.uiStroke.b, currentGrayColorAlpha)
-        fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
-        roundRect(0, 0, rectSize, rectSize, rectSize * 0.09)
-        
-        -- team announcement
-        textAlign(CENTER)
-        local textStr = "Turn:\n" .. self.announcementTeam
-        fill(0, 0, 0, math.min(110, alpha * 0.8))
-        text(textStr, -1, -1)
-        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
-        text(textStr, 0, 0)
-        
-        popStyle()
-        popMatrix()
-        
-        if alpha <= 0 then
-            self.announcementTeam = nil
-            if fadeCompleteCallback then
-                fadeCompleteCallback()
-            end
-        end
-    end
-end
-]]
+
 function InGameUI:createDamageAnimation(unit, damage)
     local anim = {
         unit = unit,
@@ -249,7 +143,7 @@ end
 
 function InGameUI:drawStrengthBadge(unit, anim)
     
-    local badgeSize = 28
+    local badgeSize = 18
     if not unit then
         unit = anim.unit
         badgeSize = 28 * anim.badgeSize
@@ -259,7 +153,7 @@ function InGameUI:drawStrengthBadge(unit, anim)
     local badgeY = unit.y + (self.map.cellSize / 2 * 0.8)
     
     pushStyle()
-    fontSize(badgeSize * 0.7)
+    fontSize(badgeSize * 0.65)
     
     -- Draw strength badge
     if unit.strength ~= 0 then
@@ -451,10 +345,6 @@ function InGameUI:drawCrosshairsOn(unit, attackable)
     end
 end
 
-function InGameUI:drawFlankingIndicators(unit)
-    
-end
-
 function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
     local iconSize = self.map.cellSize * 0.75
     local iconX = unit.x + offsetX
@@ -618,29 +508,15 @@ function InGameUI:drawMovesLeft(movesLeft)
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("moves", spec.rightX, spec.smallY)
+    text("moves", spec.rightX, spec.smallY - (self.map.height / 2))
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.rightX, spec.largeY)
+    text(movesLeft, spec.rightX, spec.largeY - (self.map.height / 2))
     
     popStyle()
 end
 
-function InGameUI:drawEndTurnButton(x, y, width, height)
-    self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
-    
-    pushStyle()
-    stroke(self.uiStroke)
-    fill(self.uiFill)
-    strokeWidth(3)
-    roundRect(x + (width / 2), y + (height / 2), width, height)
-    fill(223, 158, 158)
-    local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
-    fontSize(newFontSize)
-    textMode(CENTER)
-    text("end turn", x + width / 2, y + height / 2)
-    popStyle()
-end
+
 
 function InGameUI:touched(touch)
     if touch.state == ENDED then
@@ -650,25 +526,26 @@ function InGameUI:touched(touch)
     end
 end
 
-function InGameUI:isTouchWithinEndTurnButton(touch)
-    local bounds = self.endTurnButtonBounds
-    return touch.x >= bounds.x and touch.x <= bounds.x + bounds.width
-    and touch.y >= bounds.y and touch.y <= bounds.y + bounds.height
-end
-
 function InGameUI:drawEndTurnButton()
     pushStyle()
     rectMode(CENTER)
     local gapSize = (math.max(WIDTH, HEIGHT) - self.map.width) / 2
     local gapMargin = gapSize * 0.1
-    local buttonSide = gapSize - (gapMargin * 2)
+    local buttonSide = math.min(gapSize - (gapMargin * 2), self.map.height * 0.25)
     if CurrentOrientation == LANDSCAPE_LEFT or 
     CurrentOrientation == LANDSCAPE_RIGHT then       
         self.endTurnButtonBounds = {
-            x = self.map.offsetX + self.map.width + ((gapSize) / 2), 
+            x = self.map.offsetX + self.map.width + ((buttonSide + gapMargin) / 2), 
             y = self.map.offsetY + (self.map.width * 0.7), 
             width = buttonSide, 
             height = buttonSide}
+    else
+        gapSize = (math.max(WIDTH, HEIGHT) - self.map.height) / 2
+        self.endTurnButtonBounds = {
+            x = WIDTH - (self.map.width * 0.3), 
+            y = self.map.offsetY - ((buttonSide + gapMargin) / 2),
+            width = buttonSide, 
+        height = buttonSide}
     end
     local spec = self.endTurnButtonBounds
     --self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
