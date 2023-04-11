@@ -45,7 +45,7 @@ function InGameUI:announceTurn(team)
     self.announcementStartTime = os.clock()
     self.announcementTeam = team
 end
-
+--[[
 function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
         
@@ -91,7 +91,129 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         end
     end
 end
+]]
+function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
+    if self.announcementTeam then
+        
+        local elapsedTime = os.clock() - self.announcementStartTime
+        local fadeInDuration = 0.01 -- Adjust this value to control the fade-in speed
+        local timeBeforeFadeStarts = 0.64 -- Adjust this value to control the time before fade-out starts
+        local fadeOutDuration = 0.05 -- Adjust this value to control the fade-out speed
+        
+        -- Add new control variables
+        local startingScale = 0.25 -- Initial scale factor
+        local scaleSpeed = 2.55 -- Scale speed factor
+        
+        local alpha = 255
+        if elapsedTime < fadeInDuration then
+            alpha = 255 * (elapsedTime / fadeInDuration)
+        elseif elapsedTime > timeBeforeFadeStarts then
+            local fadeOutTime = elapsedTime - timeBeforeFadeStarts
+            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
+        end
+        
+        -- Calculate scale factor based on elapsed time
+        local aScale = startingScale + (scaleSpeed * elapsedTime)
+        local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeBeforeFadeStarts))
+        local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha)
+        
+        pushMatrix()
+        pushStyle()
+        
+        -- Apply the scaling transformation
+        translate(WIDTH / 2, HEIGHT / 2)
+        scale(aScale)
+        translate(-WIDTH / 2, -HEIGHT / 2)
+        
+        -- frame with dark background
+        rectMode(CENTER)
+        local textStr = "Turn:\n" .. self.announcementTeam
+        local rectSize = self.map.width * 0.69
+        local sizedFont = self:fontSizeForWidth(textStr, rectSize * 0.9)
+        fontSize(sizedFont * 0.8)
+        noStroke()
+        fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        -- team announcement
+        
+        textAlign(CENTER)
 
+        fill(0, 0, 0, math.min(110, alpha * 0.8))
+      --  text(textStr, (WIDTH / 2) - 1, (HEIGHT / 2) - 1)
+        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
+        text(textStr, WIDTH / 2, HEIGHT / 2)
+        
+        popStyle()
+        popMatrix()
+        if alpha <= 0 then
+            self.announcementTeam = nil
+            if fadeCompleteCallback then
+                fadeCompleteCallback()
+            end
+        end
+    end
+end
+--[[
+function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
+    if self.announcementTeam then
+        
+        local elapsedTime = os.clock() - self.announcementStartTime
+        local startingScale = 0.8 -- Adjust this value to control the initial size
+        local scaleSpeed = 1.5 -- Adjust this value to control the speed of scaling up
+        local timeFadeoutBegins = 0.75 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 1.0 -- Adjust this value to control the time when fade-out ends
+        
+        local fadeInDuration = 0.2 -- Adjust this value to control the fade-in speed
+        local fadeOutDuration = timeFadeoutEnds - timeFadeoutBegins -- Calculate fade-out duration based on the provided values
+        
+        local alpha = 255
+        if elapsedTime < fadeInDuration then
+            alpha = 255 * (elapsedTime / fadeInDuration)
+        elseif elapsedTime > timeFadeoutBegins then
+            local fadeOutTime = elapsedTime - timeFadeoutBegins
+            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
+        end
+        
+        local currentScale = startingScale + scaleSpeed * elapsedTime
+        local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeFadeoutBegins))
+        local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha)
+        
+        pushMatrix()
+        pushStyle()
+        
+        translate(WIDTH / 2, HEIGHT / 2)
+        scale(currentScale)
+        
+        -- frame with dark background
+        rectMode(CENTER)
+        local rectSize = self.map.width * 0.69 / currentScale
+        local sizedFont = self:fontSizeForWidth(self.fontSizingText, rectSize)
+        fontSize(sizedFont * 0.8)
+        noStroke()
+        fill(self.uiStroke.r, self.uiStroke.g, self.uiStroke.b, currentGrayColorAlpha)
+        fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
+        roundRect(0, 0, rectSize, rectSize, rectSize * 0.09)
+        
+        -- team announcement
+        textAlign(CENTER)
+        local textStr = "Turn:\n" .. self.announcementTeam
+        fill(0, 0, 0, math.min(110, alpha * 0.8))
+        text(textStr, -1, -1)
+        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
+        text(textStr, 0, 0)
+        
+        popStyle()
+        popMatrix()
+        
+        if alpha <= 0 then
+            self.announcementTeam = nil
+            if fadeCompleteCallback then
+                fadeCompleteCallback()
+            end
+        end
+    end
+end
+]]
 function InGameUI:createDamageAnimation(unit, damage)
     local anim = {
         unit = unit,
@@ -269,8 +391,8 @@ function InGameUI:drawCrosshairsOn(unit, attackable)
             scale(aScale)
             stroke(255, 0, 0, 194) -- Red crosshairs
         else
-            scale(aScale * 0.85)
-            stroke(98, 205) -- Gray crosshairs
+            scale(aScale * 0.75)
+            stroke(186, 221) -- Gray crosshairs
         end
         
         local circleRadius = self.map.cellSize * 0.4
@@ -327,6 +449,10 @@ function InGameUI:drawCrosshairsOn(unit, attackable)
             end
         end
     end
+end
+
+function InGameUI:drawFlankingIndicators(unit)
+    
 end
 
 function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
