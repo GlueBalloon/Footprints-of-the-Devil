@@ -16,6 +16,26 @@ function InGameUI:init(map)
     self.uiStroke = color(197, 189, 169)
     self.uiFill = color(61, 65, 81)
     self.alreadyCrosshaired = {}
+    local countdownsW = self.map.cellSize * 4
+    local largeText = "0.0"
+    local smallText = "timer timer timer"
+    local smallFont = self:fontSizeForWidth("timer timer", countdownsW)
+    local largeFont = self:fontSizeForWidth("0.0", countdownsW)
+    pushStyle()
+    fontSize(smallFont)
+    local _, smallH = textSize(smallText)
+    fontSize(largeFont)
+    local largeW, largeH = textSize("0.0") 
+    self.countdownSpecs = {
+        color = color(217, 213, 202, 94),
+        leftX = self.map.offsetX + (largeW * 0.55),
+        rightX = self.map.offsetX + self.map.width - (largeW * 0.4),
+        smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
+        largeY = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
+        smallFont = smallFont,
+        largeFont = largeFont
+    }
+    popStyle()
 end
 
 function InGameUI:announceTurn(team)
@@ -415,35 +435,33 @@ function InGameUI:fontSizeForWidth(aText, desiredWidth)
     return currentFontSize * scaleFactor
 end
 
-function InGameUI:drawTimeLeft(x, y, width, height, timeLeft)
+function InGameUI:drawTimeLeft(timeLeft)
+    local spec = self.countdownSpecs
     pushStyle()
-    fontSize(self:fontSizeForWidth(self.fontSizingText, width))
-    textAlign(CENTER, CENTER)
-    strokeWidth(4)
-    stroke(self.uiStroke)
-    fill(self.uiFill)
-    rectMode(CORNER)
-    roundRect(x + (width / 2), y + (height / 2), width, height)
-    fill(0, 237)
-    text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), (x + width / 2) -1, (y + height / 2) - 1)
-    fill(217, 213, 202)
-    text("Turn Timer: " .. string.format("%.1f", math.max(0.0, timeLeft)), x + width / 2, y + height / 2)
+    textAlign(CENTER)
+    fill(spec.color)
+
+    fontSize(spec.smallFont)
+    text("timer", spec.leftX, spec.smallY)
+    
+    fontSize(spec.largeFont)
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.leftX, spec.largeY)
+    
     popStyle()
 end
 
-function InGameUI:drawMovesLeft(x, y, width, height, movesLeft)
+function InGameUI:drawMovesLeft(movesLeft)
+    local spec = self.countdownSpecs
     pushStyle()
-    fontSize(self:fontSizeForWidth("Moves Left: 100", width))
-    textAlign(CENTER, CENTER)
+    textAlign(CENTER)
+    fill(spec.color)
     
-    stroke(self.uiStroke)
-    fill(self.uiFill)
-    strokeWidth(3)
-    rectMode(CORNER)
-    roundRect(x + (width / 2), y + (height / 2), width, height)
+    fontSize(spec.smallFont)
+    text("moves", spec.rightX, spec.smallY)
     
-    fill(217, 213, 202)
-    text("Moves Left: " .. movesLeft, x + width / 2, y + height / 2)
+    fontSize(spec.largeFont)
+    text(movesLeft, spec.rightX, spec.largeY)
+    
     popStyle()
 end
 
@@ -460,23 +478,6 @@ function InGameUI:drawEndTurnButton(x, y, width, height)
     fontSize(newFontSize)
     textMode(CENTER)
     text("end turn", x + width / 2, y + height / 2)
-    popStyle()
-end
-
-
-function InGameUI:drawUnitStatsPanel(x, y, width, height, unit)
-    pushStyle()
-    fill(255, 255, 255, 200)
-    rect(x, y, width, height)
-    
-    if unit then
-        local statsText = "Unit: " .. unit.team .. "\nStrength: " .. unit.strength
-        fill(0)
-        fontSize(height * 0.15)
-        textMode(CORNER)
-        text(statsText, x + width * 0.1, y + height * 0.8)
-    end
-    
     popStyle()
 end
 

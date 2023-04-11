@@ -7,8 +7,8 @@ function Game:init()
     self.gameState = "inGame"
     local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
     local cellsPerSide = 9
-    local sideSize = (math.min(WIDTH, HEIGHT)) - buttonHeight * 2.5
-    local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize) * 0.5
+    local sideSize = (math.min(WIDTH, HEIGHT)) - buttonHeight * 1.7
+    local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize + buttonHeight) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
     local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
@@ -47,7 +47,6 @@ function Game:init()
     local topButtonY = mapY + sideSize + buttonMargin
     self.turnIndicatorRect = vec4(mapX, bottomButtonY, bottomButtonWidth, buttonHeight)
     self.endTurnRect = vec4(mapX + bottomButtonWidth + buttonMargin, bottomButtonY, bottomButtonWidth, buttonHeight)
-    self.timeLeftRect = vec4(mapX, topButtonY, sideSize * 0.65, buttonHeight)
     self.movesLeftRect = vec4(mapX + (sideSize * 0.65) + buttonMargin, topButtonY, sideSize * 0.35, buttonHeight)
     self.turnSystem:nextTurn(self.players[1].team)
 end
@@ -57,16 +56,15 @@ function Game:draw(deltaTime)
         self.map:draw()
     end
     local turnPlayer = self.players[self.turnSystem.currentPlayerIndex]
-    local tiRec, eRec, tlRec = self.turnIndicatorRect, self.endTurnRect, self.timeLeftRect
+    local tiRec, eRec = self.turnIndicatorRect, self.endTurnRect
     local mRec = self.movesLeftRect
     local movesLeft = self.turnSystem.movesPerTurn - self.turnSystem.moveCounter
     self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
-    self.inGameUI:drawTimeLeft(tlRec.x, tlRec.y, tlRec.z, tlRec.w, self.turnSystem.timeRemaining)
-    self.inGameUI:drawMovesLeft(mRec.x, mRec.y, mRec.z, mRec.w, movesLeft)
-    self.inGameUI:drawUnitStatsPanel(10, 130, 200, 100, self.inGameUI.selectedUnit)
     self.inGameUI:drawAllUnits(self.unitManager.units)
     self.inGameUI:drawAttackableTargets(self.unitManager.units)
+    self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
+    self.inGameUI:drawMovesLeft(movesLeft)
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeAnimation)
     self.turnSystem:update(deltaTime)
 end
