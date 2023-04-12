@@ -64,12 +64,12 @@ function Game:draw(deltaTime)
     local tiRec, eRec = self.turnIndicatorRect, self.endTurnRect
     local mRec = self.movesLeftRect
     local movesLeft = self.turnSystem.movesPerTurn - self.turnSystem.moveCounter
-    --self.inGameUI:drawTurnIndicator(tiRec.x, tiRec.y, tiRec.z, tiRec.w, turnPlayer.team, turnPlayer.teamColor)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
     self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
     self.inGameUI:drawMovesLeft(movesLeft)
     self.inGameUI:drawAllUnits(self.unitManager.units)
     self.inGameUI:drawAttackableTargets(self.unitManager.units)
+    self.inGameUI:drawBadgesAndAnimations()
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeFunction)
     self.turnSystem:update(deltaTime)
 end

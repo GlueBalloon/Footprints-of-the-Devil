@@ -119,8 +119,8 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
         local endSize = 2.2 -- Adjust this value to control the ending size of the rectangle
         local scaleSpeed = 1.8 -- Adjust this value to control the speed of the scaling
-        local timeFadeoutBegins = 0.55 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 0.65 -- Adjust this value to control the time when fade-out ends
+        local timeFadeoutBegins = 0.25 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 0.55 -- Adjust this value to control the time when fade-out ends
         
         local scaleFactor = startSize + scaleSpeed * elapsedTime
         scaleFactor = math.min(scaleFactor, endSize)
@@ -299,7 +299,10 @@ function InGameUI:drawAllUnits(units)
     if self.selectedUnit then
         self:drawUnit(self.selectedUnit)
     end
-    
+
+end
+
+function InGameUI:drawBadgesAndAnimations()
     -- Draw badges for active animations
     for i, anim in ipairs(self.damageAnimations) do
         if anim.active then
@@ -309,7 +312,6 @@ function InGameUI:drawAllUnits(units)
         end
     end
 end
-
 
 function InGameUI:drawUnit(unit)
     
@@ -336,7 +338,7 @@ function InGameUI:drawUnit(unit)
         unitSizeX = unitSizeX * 1.1
         unitSizeY = unitSizeY * 1.1
         unitX = unit.x
-        unitY = unitY * 1.02
+        unitY = unitY + (self.map.cellSize * 0.07) 
     end
     if unit == self.selectedUnit then
         unitSizeX = unitSizeX * 1.2
@@ -452,7 +454,7 @@ function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
     pushStyle()
     spriteMode(CENTER)
     rectMode(CENTER)
-    tint(255, 165)
+    tint(255, 145)
     sprite(self.sapiensIcon, iconX, iconY, iconSize)
     popStyle()
 end
@@ -557,27 +559,6 @@ function InGameUI:moveSelectedUnit(x, y)
     end
 end
 
-function InGameUI:drawTurnIndicator(x, y, width, height, teamName, teamColor)    
-    pushStyle()
-    strokeWidth(3)
-    stroke(self.uiStroke)
-    fill(self.uiFill)
-    roundRect(x + (width / 2), y + (height / 2), width, height)
-    local newFontSize = self:fontSizeForWidth(self.fontSizingText, width * 0.8)
-    fontSize(newFontSize)
-    textMode(CENTER)
-    fill(0, 104)
-    text("turn: "..teamName, x - 1 + width / 2, y - 1 + height / 2)
-    fill(255)
-    text("turn: "..teamName, x + width / 2, y + height / 2)
-    fill(teamColor.r, teamColor.g, teamColor.b, 90)
-    text("turn: "..teamName, x + width / 2, y + height / 2)
-    stroke(fill())
-    fill(0, 0)
-    roundRect(x + (width / 2), y + (height / 2), width, height)
-    popStyle()
-end
-
 function InGameUI:fontSizeForWidth(aText, desiredWidth)
     local currentFontSize = fontSize()
     local textW, textH = textSize(aText)
@@ -672,7 +653,7 @@ function InGameUI:drawEndTurnButton()
     strokeWidth(0.5)
     roundRect(spec.x, spec.y, spec.width, spec.height, spec.width * 0.18)
     fill(223, 158, 158, 158)
-    local newFontSize = self:fontSizeForWidth("end\nturn", spec.width * 0.7)
+    local newFontSize = self:fontSizeForWidth("end\nturn", spec.width * 0.6)
     fontSize(newFontSize)
     textMode(CENTER)
     text("end\nturn", spec.x, spec.y)
