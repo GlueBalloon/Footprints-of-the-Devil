@@ -8,7 +8,7 @@ function Game:init()
    -- local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
     local buttonHeight = 0
     local cellsPerSide = 9
-    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.92
+    local sideSize = (math.min(WIDTH, HEIGHT)) * 0.95
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize + buttonHeight) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
