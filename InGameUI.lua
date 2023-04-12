@@ -46,6 +46,7 @@ function InGameUI:announceTurn(team)
     self.announcementTeam = team
 end
 
+--[[
 function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
         
@@ -88,8 +89,8 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         noStroke()
         fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
         roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
-        fill(203, currentGrayColorAlpha)
-        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        fill(0, currentGrayColorAlpha)
+        --roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
         -- team announcement
         
         textAlign(CENTER)
@@ -110,6 +111,72 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     end
 end
 
+]]
+function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
+    if self.announcementTeam then
+        
+        local elapsedTime = os.clock() - self.announcementStartTime
+        local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
+        local endSize = 2.2 -- Adjust this value to control the ending size of the rectangle
+        local scaleSpeed = 1.8 -- Adjust this value to control the speed of the scaling
+        local timeFadeoutBegins = 0.55 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 0.65 -- Adjust this value to control the time when fade-out ends
+        
+        local scaleFactor = startSize + scaleSpeed * elapsedTime
+        scaleFactor = math.min(scaleFactor, endSize)
+        
+        local alpha = 255
+        if elapsedTime >= timeFadeoutBegins and elapsedTime <= timeFadeoutEnds then
+            local fadeOutTime = elapsedTime - timeFadeoutBegins
+            alpha = math.max(0, 255 * (1 - fadeOutTime / (timeFadeoutEnds - timeFadeoutBegins)))
+        elseif elapsedTime > timeFadeoutEnds then
+            alpha = 0
+        end
+        
+        local colorFactor = math.min(1, elapsedTime / timeFadeoutBegins)
+        local bgColor = {
+            r = self.uiStroke.r * (1 - colorFactor) + teamColor.r * colorFactor,
+            g = self.uiStroke.g * (1 - colorFactor) + teamColor.g * colorFactor,
+            b = self.uiStroke.b * (1 - colorFactor) + teamColor.b * colorFactor
+        }
+        local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeFadeoutBegins))
+        local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha * 0.15)
+        
+        pushStyle()
+        
+        -- frame with dark background
+        rectMode(CENTER)
+        local textStr = "Turn:\n" .. self.announcementTeam
+        local rectSize = self.map.width * scaleFactor
+        local sizedFont = self:fontSizeForWidth(textStr, rectSize * 0.9)
+        fontSize(sizedFont)
+        noStroke()
+        fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        fill(110, currentGrayColorAlpha)
+        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
+        
+        -- team announcement
+        textAlign(CENTER)
+        local textStr = "Turn:\n" .. self.announcementTeam
+        fill(0, 0, 0, math.min(180, alpha * 0.8))
+        --text(textStr, (WIDTH / 2) - 1, (HEIGHT / 2) - 1)
+        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
+        text(textStr, WIDTH / 2, HEIGHT / 2)
+        
+        popStyle()
+        
+        if alpha <= 0 then
+            self.announcementTeam = nil
+            if fadeCompleteCallback then
+                fadeCompleteCallback()
+            end
+        end
+    end
+end
+
+
+
 function InGameUI:createDamageAnimation(unit, damage)
     local anim = {
         unit = unit,
@@ -121,7 +188,7 @@ function InGameUI:createDamageAnimation(unit, damage)
     -- Add the animation to damageAnimations table
     table.insert(self.damageAnimations, anim)
     
-    anim.badgeSize = 1.5 -- Start by increasing the badge size
+    anim.badgeSize = 1.75 -- Start by increasing the badge size
     
     -- Tween badge size back to normal
     tween(0.3, anim, { badgeSize = 1 }, tween.easing.expoOut)
@@ -144,11 +211,10 @@ function InGameUI:createDamageAnimation(unit, damage)
 end
 
 function InGameUI:drawStrengthBadge(unit, anim)
-    
     local badgeSize = self.map.cellSize * 0.45
-    if not unit then
+    
+    if anim and anim.unit then
         unit = anim.unit
-        badgeSize = 28 * anim.badgeSize
     end
     
     local badgeX = unit.x - (self.map.cellSize / 2 * 0.8)
@@ -171,7 +237,7 @@ function InGameUI:drawStrengthBadge(unit, anim)
     -- Draw floating hit points text if available
     if anim and anim.floatingHP then
         fill(255, 255, 255, anim.floatingHP.opacity)
-        fontSize(fontSize() * 1.5)
+        fontSize(fontSize() * 2.5)
         text(tostring(anim.floatingHP.value), badgeX, badgeY + (badgeSize / 2) - 5 + anim.floatingHP.y)
     end
     
@@ -263,18 +329,20 @@ function InGameUI:drawUnit(unit)
     spriteMode(CENTER)
     rectMode(CENTER)
     local unitX = unit.x + (self.map.cellSize * 0.1)
+    local unitY = unit.y
     local unitSizeX = self.map.cellSize * 1.15
     local unitSizeY = self.map.cellSize * 1.1
     if unit.team == "sapiens" then
         unitSizeX = unitSizeX * 1.1
         unitSizeY = unitSizeY * 1.1
         unitX = unit.x
+        unitY = unitY * 1.02
     end
     if unit == self.selectedUnit then
         unitSizeX = unitSizeX * 1.2
         unitSizeY = unitSizeY * 1.2
     end
-    sprite(unit.icon, unitX, unit.y, 
+    sprite(unit.icon, unitX, unitY, 
     unitSizeX, unitSizeY)
 
     self:drawStrengthBadge(unit)
@@ -377,7 +445,7 @@ function InGameUI:drawCrosshairsOn(unit, attackable)
 end
 
 function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
-    local iconSize = self.map.cellSize * 0.75
+    local iconSize = self.map.cellSize * 0.85
     local iconX = unit.x + offsetX
     local iconY = unit.y + offsetY
     
@@ -521,6 +589,15 @@ function InGameUI:drawTimeLeft(timeLeft)
     local spec = self.countdownSpecs
     pushStyle()
     textAlign(CENTER)
+    
+    fill(190, 100, 96)
+    
+    fontSize(spec.smallFont)
+    text("timer", spec.leftX - 1, spec.smallY - 1)
+    
+    fontSize(spec.largeFont)
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.leftX - 1, spec.largeY - 1)
+    
     fill(spec.color)
 
     fontSize(spec.smallFont)
@@ -536,6 +613,15 @@ function InGameUI:drawMovesLeft(movesLeft)
     local spec = self.countdownSpecs
     pushStyle()
     textAlign(CENTER)
+    
+    fill(190, 100, 96)
+    
+    fontSize(spec.smallFont)
+    text("moves", spec.rightX - 1, spec.smallY - (self.map.height / 2) - 1)
+    
+    fontSize(spec.largeFont)
+    text(movesLeft, spec.rightX - 1, spec.largeY - (self.map.height / 2) - 1)
+    
     fill(spec.color)
     
     fontSize(spec.smallFont)
