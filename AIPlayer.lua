@@ -1,60 +1,44 @@
 AIPlayer = class()
 
-function AIPlayer:init(id, team, teamColor)
-    self.id = id
+function AIPlayer:init(team, teamColor, queries)
     self.team = team
     self.teamColor = teamColor
+    self.queries = queries
 end
 
-function AIPlayer:takeTurn(units, map)
-    -- Implement your AI logic here
+AIPlayer = class()
+
+function AIPlayer:init(team, teamColor, queries)
+    self.team = team
+    self.teamColor = teamColor
+    self.queries = queries
+end
+
+function AIPlayer:takeTurn()
+    local units = self.queries:getUnits()
+    local teamUnits = {}
+    
     for _, unit in ipairs(units) do
-        if unit.owner == self.id then
-            self:moveUnit(unit, map)
-            self:attackEnemy(unit, units)
+        if unit.playerTeam == self.team then
+            table.insert(teamUnits, unit)
+        end
+    end
+    
+    if #teamUnits == 0 then return end
+    
+    local unitToAct = teamUnits[math.random(#teamUnits)]
+    
+    local action = math.random(2) -- 1 for move, 2 for attack
+    local row, col = unitToAct.row, unitToAct.col
+    
+    if action == 1 then
+        local newRow, newCol = row + math.random(-1, 1), col + math.random(-1, 1)
+        self.queries:moveUnit(unitToAct, newRow, newCol)
+    else
+        local target = self.queries:getUnitAt(row + math.random(-1, 1), col + math.random(-1, 1))
+        
+        if target and target.playerTeam ~= self.team then
+            self.queries:attackUnit(unitToAct, target)
         end
     end
 end
-
-function AIPlayer:moveUnit(unit, map)
-    -- Basic move logic: Move towards the closest enemy unit
-    local target = self:findClosestEnemy(unit, map.units)
-    if target then
-        local dx = target.x - unit.x
-        local dy = target.y - unit.y
-        local moveX = dx > 0 and 1 or -1
-        local moveY = dy > 0 and 1 or -1
-        unit.x = unit.x + moveX
-        unit.y = unit.y + moveY
-    end
-end
-
-function AIPlayer:attackEnemy(unit, units)
-    -- Basic attack logic: Attack adjacent enemy units
-    for _, target in ipairs(units) do
-        if target.owner ~= self.id then
-            local distX = math.abs(unit.x - target.x)
-            local distY = math.abs(unit.y - target.y)
-            if distX <= 1 and distY <= 1 then
-                print("AI unit attacks enemy unit")
-                -- Implement attack logic here
-            end
-        end
-    end
-end
-
-function AIPlayer:findClosestEnemy(unit, units)
-    local closestEnemy = nil
-    local minDist = math.huge
-    for _, target in ipairs(units) do
-        if target.owner ~= self.id then
-            local dist = math.sqrt((unit.x - target.x) ^ 2 + (unit.y - target.y) ^ 2)
-            if dist < minDist then
-                minDist = dist
-                closestEnemy = target
-            end
-        end
-    end
-    return closestEnemy
-end
-

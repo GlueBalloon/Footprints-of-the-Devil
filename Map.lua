@@ -124,6 +124,19 @@ function Map:cellRowAndColumnToPoint(row, col)
     return x, y
 end
 
+-- In the Map class
+function Map:orthogonalCellsFor(row, col)
+    local neighbors = {}
+    local directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
+    for _, dir in ipairs(directions) do
+        local newRow, newCol = row + dir[1], col + dir[2]
+        if newRow >= 1 and newRow <= self.gridSize and newCol >= 1 and newCol <= self.gridSize then
+            table.insert(neighbors, {row = newRow, col = newCol})
+        end
+    end
+    return neighbors
+end
+
 function Map:randomColorBetweenBeigeAndRust()
     local function lerp(a, b, t)
         return a + (b - a) * t

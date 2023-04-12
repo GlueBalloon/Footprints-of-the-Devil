@@ -54,6 +54,32 @@ function Game:init()
     self.endTurnRect = vec4(mapX + bottomButtonWidth + buttonMargin, bottomButtonY, bottomButtonWidth, buttonHeight)
     self.movesLeftRect = vec4(mapX + (sideSize * 0.65) + buttonMargin, topButtonY, sideSize * 0.35, buttonHeight)
     self.turnSystem:nextTurn(self.players[1].team)
+    self:defineGameQueries()
+end
+
+function Game:defineGameQueries()
+    self.queries = GameQueries()
+    self.queries.getUnits = function(self) return self.unitManager.units end
+    self.queries.getUnitAt = function(self, row, col) return self.unitManager:getUnitAt(row, col) end
+    self.queries.getCurrentPlayer = function(self) return self.turnSystem:getCurrentPlayer() end
+    self.queries.getPlayerByTeam = function(self, team) return self:getPlayerByTeam(team) end 
+    self.queries.moveUnit = function(self, unit, row, col)
+        local moveCommand = MoveCommand(unit, row, col, self)
+        self.invoker:executeCommand(moveCommand)
+    end    
+    self.queries.attackUnit = function(self, attacker, target)
+        local attackCommand = AttackCommand(attacker, target, self)
+        self.invoker:executeCommand(attackCommand)
+    end
+end
+
+function Game:getPlayerByTeam(team)
+    for _, player in ipairs(self.game.players) do
+        if player.team == team then
+            return player
+        end
+    end
+    return nil
 end
 
 function Game:draw(deltaTime)

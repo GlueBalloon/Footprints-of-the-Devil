@@ -133,12 +133,6 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
             alpha = 0
         end
         
-        local colorFactor = math.min(1, elapsedTime / timeFadeoutBegins)
-        local bgColor = {
-            r = self.uiStroke.r * (1 - colorFactor) + teamColor.r * colorFactor,
-            g = self.uiStroke.g * (1 - colorFactor) + teamColor.g * colorFactor,
-            b = self.uiStroke.b * (1 - colorFactor) + teamColor.b * colorFactor
-        }
         local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeFadeoutBegins))
         local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha * 0.15)
         

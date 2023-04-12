@@ -5,10 +5,11 @@
 	<key>Buffer Order</key>
 	<array>
 		<string>Scratch</string>
-		<string>SprintGoals</string>
+		<string>DevGoals</string>
 		<string>Main</string>
 		<string>MainMenu</string>
 		<string>Game</string>
+		<string>GameQueries</string>
 		<string>InGameUI</string>
 		<string>InvokerAndCommands</string>
 		<string>TurnSystem</string>
