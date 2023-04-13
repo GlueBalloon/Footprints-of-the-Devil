@@ -12,7 +12,7 @@ function Game:init()
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize + buttonHeight) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
-    local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
+    local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222), SimpleLogicModule())
     self.players = {player1, aiPlayer}
     self.invoker = Invoker()
     self.turnSystem = TurnSystem(self.players, 5, 6, self.invoker)
@@ -27,11 +27,8 @@ function Game:init()
     self.endTurnChangeFunction = function()
         self.turnSystem.turnChangeAnimationInProgress = false
         self.turnSystem.turnStartTime = os.clock()
-        if self.turnSystem:getCurrentPlayer().team == "neanderthal" then
-            self.players[2]:takeTurn()
-        end
     end
-    self.inGameUI.nextTurnButtonAction = function()
+    self.inGameUI.nextTurnAction = function()
         local nextTurnCommand = NextTurnCommand(self.turnSystem)
         self.invoker:executeCommand(nextTurnCommand)
     end
@@ -79,12 +76,16 @@ function Game:defineGameQueries()
         local moveCommand = MoveCommand(game.map.rowColToPointFunction, unit, row, col)
         game.invoker:executeCommand(moveCommand)
     end    
-    self.queries.attackUnit = function(self, attacker, target)
-        local attackCommand = AttackCommand(attacker, target, self)
+    self.queries.attack = function(self, attacker, target)
+        local attackCommand = AttackCommand(game.attackFunction, attacker, target)
         game.invoker:executeCommand(attackCommand)
     end
     self.queries.orthogonalCellsFor = function(self, row, col)
         return game.map:orthogonalCellsFor(row, col)
+    end
+    self.queries.endTurn = function(self)
+        local nextTurnCommand = NextTurnCommand(game.turnSystem)
+        game.invoker:executeCommand(nextTurnCommand)
     end
 end
 
@@ -112,6 +113,22 @@ function Game:draw(deltaTime)
     self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawBadgesAndAnimations()
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeFunction)
+    -- AI turn handling
+    local aiPlayer = self.players[2]
+    if self.queries:getCurrentPlayer().team == aiPlayer.team and not self.turnSystem.turnChangeAnimationInProgress then
+        local actNow = math.random(20) == 1
+        if not aiPlayer.aiActionTime or 
+        os.clock() - aiPlayer.aiActionTime > 0.5 or -- Wait
+        actNow then 
+            aiPlayer.aiActionTime = os.clock()
+            
+            local actionTaken = aiPlayer.logicModule:decideAction(aiPlayer.queries)
+            
+            if not actionTaken then
+                aiPlayer.queries:endTurn()
+            end
+        end
+    end
     self.turnSystem:update(deltaTime)
 end
 

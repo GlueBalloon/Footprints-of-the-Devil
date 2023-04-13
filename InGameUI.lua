@@ -7,7 +7,7 @@ function InGameUI:init(map)
     self.cellSize = map.cellSize
     self.selectedUnit = nil
     self.isActiveTeam = function(team) end
-    self.nextTurnButtonAction = function() end
+    self.nextTurnAction = function() end
     self.isCellOccupied = function(row, col) end
     self.fontSizingText = "abcdefghijklmnop"
     self.sapiensIcon = asset.Sapiens
@@ -613,7 +613,7 @@ end
 function InGameUI:touched(touch)
     if touch.state == ENDED then
         if self:isTouchWithinEndTurnButton(touch) then
-            self.nextTurnButtonAction()
+            self.nextTurnAction()
         end
     end
 end

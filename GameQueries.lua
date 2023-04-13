@@ -22,8 +22,11 @@ end
 function GameQueries:moveUnit(unit, row, col)
 end
 
-function GameQueries:attackUnit(attacker, target)
+function GameQueries:attack(attacker, target)
 end
 
 function GameQueries:orthogonalCellsFor(row, col)
+end
+
+function GameQueries:endTurn()
 end
