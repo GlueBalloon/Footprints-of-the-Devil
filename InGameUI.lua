@@ -641,7 +641,6 @@ function InGameUI:drawEndTurnButton()
     end
     local spec = self.endTurnButtonBounds
     --self.endTurnButtonBounds = {x = x, y = y, width = width, height = height}
-    print(spec.x, spec.y, spec.width, spec.height, gapSize / 8)
     stroke(self.uiStroke)
     fill(self.uiFill)
     strokeWidth(0.5)
@@ -656,7 +655,7 @@ end
 
 function InGameUI:isTouchWithinEndTurnButton(touch)
     local bounds = self.endTurnButtonBounds
-    print(bounds.x, "-", bounds.y, "-", bounds.width, "-", bounds.height)
+    --print(bounds.x, "-", bounds.y, "-", bounds.width, "-", bounds.height)
     local halfW, halfH = bounds.width / 2, bounds.height / 2
     local leftX, rightX = bounds.x - halfW, bounds.x + halfW
     local topY, bottomY = bounds.y + halfH, bounds.y - halfH

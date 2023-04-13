@@ -66,7 +66,6 @@ function NextTurnCommand:init(turnSystem, team)
 end
 
 function NextTurnCommand:execute()
-    print("NextTurnCommand:execute()")
     self.turnSystem:nextTurn(self.team)
 end
 

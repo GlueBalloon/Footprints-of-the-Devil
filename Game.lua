@@ -27,6 +27,9 @@ function Game:init()
     self.endTurnChangeFunction = function()
         self.turnSystem.turnChangeAnimationInProgress = false
         self.turnSystem.turnStartTime = os.clock()
+        if self.turnSystem:getCurrentPlayer().team == "neanderthal" then
+            self.players[2]:takeTurn()
+        end
     end
     self.inGameUI.nextTurnButtonAction = function()
         local nextTurnCommand = NextTurnCommand(self.turnSystem)
@@ -55,21 +58,33 @@ function Game:init()
     self.movesLeftRect = vec4(mapX + (sideSize * 0.65) + buttonMargin, topButtonY, sideSize * 0.35, buttonHeight)
     self.turnSystem:nextTurn(self.players[1].team)
     self:defineGameQueries()
+    aiPlayer.queries = self.queries
 end
 
 function Game:defineGameQueries()
+    local game = self
     self.queries = GameQueries()
-    self.queries.getUnits = function(self) return self.unitManager.units end
-    self.queries.getUnitAt = function(self, row, col) return self.unitManager:getUnitAt(row, col) end
-    self.queries.getCurrentPlayer = function(self) return self.turnSystem:getCurrentPlayer() end
-    self.queries.getPlayerByTeam = function(self, team) return self:getPlayerByTeam(team) end 
+    self.queries.getUnits = function() 
+        return game.unitManager.units 
+    end
+    self.queries.getRowAndColumnFor = function(self, unit)
+        return game.map:pointToCellRowAndColumn(unit.x, unit.y)
+    end
+    self.queries.getUnitAt = function(self, row, col) 
+        return game:isCellOccupied(game.unitManager.units, row, col) 
+    end
+    self.queries.getCurrentPlayer = function(self) return game.turnSystem:getCurrentPlayer() end
+    self.queries.getPlayerByTeam = function(self, team) return game:getPlayerByTeam(team) end 
     self.queries.moveUnit = function(self, unit, row, col)
-        local moveCommand = MoveCommand(unit, row, col, self)
-        self.invoker:executeCommand(moveCommand)
+        local moveCommand = MoveCommand(game.map.rowColToPointFunction, unit, row, col)
+        game.invoker:executeCommand(moveCommand)
     end    
     self.queries.attackUnit = function(self, attacker, target)
         local attackCommand = AttackCommand(attacker, target, self)
-        self.invoker:executeCommand(attackCommand)
+        game.invoker:executeCommand(attackCommand)
+    end
+    self.queries.orthogonalCellsFor = function(self, row, col)
+        return game.map:orthogonalCellsFor(row, col)
     end
 end
 
@@ -182,7 +197,6 @@ function Game:removeUnit(unit)
         end
     end
 end
-
 
 function Game:saveGame(slot)
     local saveData = {

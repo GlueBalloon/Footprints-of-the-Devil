@@ -71,13 +71,6 @@ function Unit:levelUp()
     self.strength = self.strength + 1 -- Adjust this value for the desired strength increase per level
 end
 
--- Helper function to get the unit at a specific grid position
-function getUnitAt(x, y)
-    -- Implement this function to look up units in your game's data structures
-end
-
-
-
 -- Unit Manager Class
 UnitManager = class()
 

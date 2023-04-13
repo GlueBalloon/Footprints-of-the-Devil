@@ -1,44 +1,45 @@
 AIPlayer = class()
 
-function AIPlayer:init(team, teamColor, queries)
-    self.team = team
-    self.teamColor = teamColor
-    self.queries = queries
-end
-
-AIPlayer = class()
-
-function AIPlayer:init(team, teamColor, queries)
+function AIPlayer:init(id, team, teamColor, queries)
+    self.id = id
     self.team = team
     self.teamColor = teamColor
     self.queries = queries
 end
 
 function AIPlayer:takeTurn()
-    local units = self.queries:getUnits()
-    local teamUnits = {}
-    
-    for _, unit in ipairs(units) do
-        if unit.playerTeam == self.team then
-            table.insert(teamUnits, unit)
-        end
-    end
-    
-    if #teamUnits == 0 then return end
-    
-    local unitToAct = teamUnits[math.random(#teamUnits)]
-    
-    local action = math.random(2) -- 1 for move, 2 for attack
-    local row, col = unitToAct.row, unitToAct.col
-    
-    if action == 1 then
-        local newRow, newCol = row + math.random(-1, 1), col + math.random(-1, 1)
-        self.queries:moveUnit(unitToAct, newRow, newCol)
-    else
-        local target = self.queries:getUnitAt(row + math.random(-1, 1), col + math.random(-1, 1))
-        
-        if target and target.playerTeam ~= self.team then
-            self.queries:attackUnit(unitToAct, target)
+    print("AIPlayer:takeTurn()")
+    local queries = self.queries
+    local units = queries:getUnits()
+    print("queries:getUnits() ", units)
+    for i, unit in ipairs(units) do
+        if unit.team == queries:getCurrentPlayer().team then
+            local row, col = queries:getRowAndColumnFor(unit)
+            local neighbors = queries:orthogonalCellsFor(row, col)
+            local moveTargets = {}
+            local attackTargets = {}
+            
+            for _, neighbor in ipairs(neighbors) do
+                if neighbor.row and neighbor.col then
+                    local target = queries:getUnitAt(neighbor.row, neighbor.col)
+                    if not target then
+                        table.insert(moveTargets, neighbor)
+                    elseif target.team ~= unit.team then
+                        table.insert(attackTargets, target)
+                    end 
+                end
+            end
+            
+            if #attackTargets > 0 then
+                -- Attack a random adjacent enemy unit.
+                local target = attackTargets[math.random(1, #attackTargets)]
+                queries:attackUnit(unit, target)
+            elseif #moveTargets > 0 then
+                -- Move the unit to a random empty adjacent cell.
+                local newPosition = moveTargets[math.random(1, #moveTargets)]
+                queries:moveUnit(unit, newPosition.row, newPosition.col)
+            end
+            break
         end
     end
 end
