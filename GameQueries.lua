@@ -30,3 +30,9 @@ end
 
 function GameQueries:endTurn()
 end
+
+function GameQueries:isFlanked(unit)
+end
+
+function GameQueries:attackableUnits(selectedUnit, units)
+end

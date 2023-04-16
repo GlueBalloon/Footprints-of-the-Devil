@@ -1,8 +1,9 @@
 -- In-Game UI
 InGameUI = class()
 
-function InGameUI:init(map)
+function InGameUI:init(map, queries)
     self.map = map
+    self.queries = queries
     self.gridSize = map.gridSize
     self.cellSize = map.cellSize
     self.selectedUnit = nil
@@ -14,10 +15,13 @@ function InGameUI:init(map)
     self.neanderthalIcon = asset.Neanderthal
     self.announcementStartTime = 0
     self.announcementTeam = nil
-    self.crosshairTweens = {}
+  --  self.crosshairTweens = {}
     self.damageAnimations = {}
     self.uiStroke = color(197, 189, 169)
     self.uiFill = color(61, 65, 81)
+    self.currentPlayerCombatColor = color(255, 0, 45)
+    self.otherPlayerCombatColor = color(215)
+    self.animation = Animation(map, self.currentPlayerCombatColor, self.otherPlayerCombatColor)
     self.alreadyCrosshaired = {}
     local countdownsW = self.map.cellSize * 5.25
     local largeText = "0.0"
@@ -41,77 +45,23 @@ function InGameUI:init(map)
     popStyle()
 end
 
+function InGameUI:draw(units)
+    self:updateAndDrawIndicators(units)
+end
+
+function InGameUI:updateAndDrawIndicators(units)
+    self.alreadyCrosshaired = {}
+    self:updateCrosshairsForAttackableUnits(units)
+    self:updateFlankingArrows(units)
+    self.animation:drawArrows()
+    self.animation:drawCrosshairs()
+end
+
 function InGameUI:announceTurn(team)
     self.announcementStartTime = os.clock()
     self.announcementTeam = team
 end
 
---[[
-function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
-    if self.announcementTeam then
-        
-        local elapsedTime = os.clock() - self.announcementStartTime
-        local fadeInDuration = self.map.width * 0.0001 -- Adjust this value to control the fade-in speed
-        local timeBeforeFadeStarts = self.map.width * 0.00062 -- Adjust this value to control the time before fade-out starts
-        local fadeOutDuration = self.map.width * 0.0002 -- Adjust this value to control the fade-out speed
-        
-        -- Add new control variables
-        local startingScale = 0.25 -- Initial scale factor
-        local scaleSpeed = self.map.width * 0.02 -- Scale speed factor
-        
-        local alpha = 255
-        if elapsedTime < fadeInDuration then
-            alpha = 255 * (elapsedTime / fadeInDuration)
-        elseif elapsedTime > timeBeforeFadeStarts then
-            local fadeOutTime = elapsedTime - timeBeforeFadeStarts
-            alpha = math.max(0, 255 * (1 - fadeOutTime / fadeOutDuration))
-        end
-        
-        -- Calculate scale factor based on elapsed time
-        local aScale = startingScale + (scaleSpeed * elapsedTime)
-        local currentTeamColorAlpha = math.min(alpha, 255 * (elapsedTime / timeBeforeFadeStarts))
-        local currentGrayColorAlpha = math.max(0, alpha - currentTeamColorAlpha)
-        
-        pushMatrix()
-        pushStyle()
-        
-        -- Apply the scaling transformation
-        translate(WIDTH / 2, HEIGHT / 2)
-        scale(aScale)
-        translate(-WIDTH / 2, -HEIGHT / 2)
-        
-        -- frame with dark background
-        rectMode(CENTER)
-        local textStr = "Turn:\n" .. self.announcementTeam
-        local rectSize = self.map.width * 0.69
-        local sizedFont = self:fontSizeForWidth(textStr, rectSize * 0.9)
-        fontSize(sizedFont)
-        noStroke()
-        fill(teamColor.r, teamColor.g, teamColor.b, currentTeamColorAlpha)
-        roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
-        fill(0, currentGrayColorAlpha)
-        --roundRect(WIDTH / 2, HEIGHT / 2, rectSize, rectSize, rectSize * 0.09)
-        -- team announcement
-        
-        textAlign(CENTER)
-
-        fill(0, 0, 0, math.min(110, alpha * 0.8))
-      --  text(textStr, (WIDTH / 2) - 1, (HEIGHT / 2) - 1)
-        fill(teamColor.r, teamColor.g, teamColor.b, alpha)
-        text(textStr, WIDTH / 2, HEIGHT / 2)
-        
-        popStyle()
-        popMatrix()
-        if alpha <= 0 then
-            self.announcementTeam = nil
-            if fadeCompleteCallback then
-                fadeCompleteCallback()
-            end
-        end
-    end
-end
-
-]]
 function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     if self.announcementTeam then
         
@@ -169,6 +119,55 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     end
 end
 
+function InGameUI:updateCrosshairsForAttackableUnits(units)
+    local selectedUnitAttackable, otherAttackable = self.queries:attackableUnits(self.selectedUnit, units)
+    
+    for _, unit in ipairs(units) do
+        if self.selectedUnit and table_contains(selectedUnitAttackable, unit) then
+            self.animation:addCrosshairAnimation(unit, true)
+        elseif self.selectedUnit and self.selectedUnit ~= unit and unit.team ~= self.selectedUnit.team and table_contains(otherAttackable, unit) then
+            self.animation:addCrosshairAnimation(unit, false)
+        else
+            self.animation.crosshairTweens[unit] = nil
+        end
+    end
+end
+
+function InGameUI:updateFlankingArrows(units)
+    local sapiensUnits = {}
+    local neanderthalUnits = {}
+    
+    for _, unit in ipairs(units) do
+        if unit.team == "sapiens" then
+            table.insert(sapiensUnits, unit)
+        elseif unit.team == "neanderthal" then
+            table.insert(neanderthalUnits, unit)
+        end
+    end
+    
+    for _, neanderthal in ipairs(neanderthalUnits) do
+        local flankingSapiens = {}
+        local isFlanked = self.queries:isFlanked(neanderthal)
+        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        
+        if isFlanked then
+            for _, sapiens in ipairs(sapiensUnits) do
+                local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
+                if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
+                    table.insert(flankingSapiens, sapiens)
+                end
+            end
+            
+            if #flankingSapiens > 0 then
+                if neanderthal == self.selectedUnit then
+                    self.animation:drawFlankingArrows(neanderthal, flankingSapiens, self.currentPlayerCombatColor)
+                else
+                    self.animation:drawFlankingArrows(neanderthal, flankingSapiens, self.otherPlayerCombatColor)
+                end
+            end
+        end
+    end
+end
 
 
 function InGameUI:createDamageAnimation(unit, damage)
@@ -201,7 +200,7 @@ function InGameUI:createDamageAnimation(unit, damage)
         anim.floatingHP = nil
         anim.active = false
     end)
-
+    
 end
 
 function InGameUI:drawStrengthBadge(unit, anim)
@@ -293,7 +292,10 @@ function InGameUI:drawAllUnits(units)
     if self.selectedUnit then
         self:drawUnit(self.selectedUnit)
     end
-
+    
+    for _, unit in ipairs(units) do
+      --  self:drawFlankingArrows(unit, color(255, 0, 0))
+    end
 end
 
 function InGameUI:drawBadgesAndAnimations()
@@ -319,7 +321,7 @@ function InGameUI:drawUnit(unit)
     -- Calculate the x and y position of the cell
     local x = self.map.offsetX + (column - 1) * self.map.cellSize
     local y = self.map.offsetY + (row - 1) * self.map.cellSize
-
+    
     -- Draw the unit sprite
     pushStyle()
     spriteMode(CENTER)
@@ -340,131 +342,10 @@ function InGameUI:drawUnit(unit)
     end
     sprite(unit.icon, unitX, unitY, 
     unitSizeX, unitSizeY)
-
+    
     self:drawStrengthBadge(unit)
     
     popStyle()
-end
-
-function InGameUI:drawAttackableTargets(units)
-    self.alreadyCrosshaired = {}
-    for _, attacker in ipairs(units) do
-        if self.isActiveTeam(attacker.team) then
-            for _, target in ipairs(units) do
-                if attacker ~= target and attacker.team ~= target.team and self:isAttackable(attacker, target) then
-                    if self.selectedUnit and self:isAttackable(self.selectedUnit, target) then
-                        if attacker == self.selectedUnit then
-                            self:drawCrosshairsOn(target, true)
-                            self.alreadyCrosshaired[target] = true
-                        end
-                    elseif not self.alreadyCrosshaired[target] then
-                        self:drawCrosshairsOn(target, false)
-                        self.alreadyCrosshaired[target] = true
-                    end
-                end
-            end 
-        end
-    end
-end
-
-function InGameUI:drawCrosshairsOn(unit, attackable)
-    local function drawScaledCrosshairs(aScale)
-        pushStyle()
-        pushMatrix()
-        
-        noFill()
-        strokeWidth(self.map.cellSize * 0.15)
-        translate(unit.x, unit.y)
-        scale(aScale)
-        if attackable then
-            scale(aScale)
-            stroke(255, 0, 0, 194) -- Red crosshairs
-        else
-            scale(aScale * 0.75)
-            stroke(221, 233) -- Gray crosshairs
-        end
-        
-        local circleRadius = self.map.cellSize * 0.4
-        
-        ellipse(0, 0, circleRadius * 2, circleRadius * 2)
-        
-        local lineLength = self.map.cellSize * 0.1
-        
-        line(-circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth(), 0) -- West line
-        line(circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth(), 0) -- East line
-        line(0, -circleRadius - lineLength, 0, -circleRadius + lineLength + strokeWidth()) -- South line
-        line(0, circleRadius + lineLength, 0, circleRadius - lineLength - strokeWidth()) -- North line
-        
-        popStyle()
-        popMatrix()
-    end
-    
-    if not self.crosshairTweens[unit] then
-        local duration = 0.55  -- Adjust this value to control the overall animation duration
-        local scaleSmall = 0.1  -- Adjust this value to control the initial scale
-        local scaleLarge = 1
-        local bounceFactor = 1.5  -- Adjust this value to control the bounce size
-        self.crosshairTweens[unit] = {scale = scaleSmall}
-        -- Start the animation sequence for this unit's crosshair
-        tween(duration * 0.4, self.crosshairTweens[unit], {scale = scaleLarge}, {easing = tween.easing.backOut, callback = function()
-                tween(duration * 0.3, self.crosshairTweens[unit], {scale = scaleLarge * bounceFactor}, {easing = tween.easing.quadIn, callback = function()
-                        tween(duration * 0.3, self.crosshairTweens[unit], {scale = scaleLarge}, {easing = tween.easing.quadOut})
-                    end})
-            end})
-    end
-    
-    if self.crosshairTweens[unit].scale then
-        drawScaledCrosshairs(self.crosshairTweens[unit].scale)
-    else
-        drawScaledCrosshairs(scaleLarge)
-    end
-    
-    -- Draw flanking indicators if the unit is a Neanderthal unit
-    
-    if unit.team == "neanderthal" and self.isActiveTeam("sapiens") then
-        local row, col = self.map:pointToCellRowAndColumn(unit.x, unit.y)
-        local iconOffset = self.map.cellSize * 0.85
-        local offsets = {
-            {x = 0, y = iconOffset},
-            {x = 0, y = -iconOffset},
-            {x = iconOffset, y = 0},
-            {x = -iconOffset, y = 0},
-        }
-        
-        for _, offset in ipairs(offsets) do
-            local newRow, newCol = self.map:pointToCellRowAndColumn(unit.x + offset.x, unit.y + offset.y)
-            if not self.isCellOccupied(newRow, newCol) then
-                self:drawFlankingIndicator(unit, offset.x, offset.y)
-            end
-        end
-    end
-end
-
-function InGameUI:drawFlankingIndicator(unit, offsetX, offsetY)
-    local iconSize = self.map.cellSize * 0.85
-    local iconX = unit.x + offsetX
-    local iconY = unit.y + offsetY
-    
-    pushStyle()
-    spriteMode(CENTER)
-    rectMode(CENTER)
-    tint(255, 145)
-    sprite(self.sapiensIcon, iconX, iconY, iconSize)
-    popStyle()
-end
-
-function InGameUI:resetCrosshairTweens()
-    self.crosshairTweens = {}
-end
-
-function InGameUI:isAttackable(attacker, target)
-    local attackerRow, attackerCol = self.map:pointToCellRowAndColumn(attacker.x, attacker.y)
-    local targetRow, targetCol = self.map:pointToCellRowAndColumn(target.x, target.y)
-    
-    local rowDelta = math.abs(targetRow - attackerRow)
-    local colDelta = math.abs(targetCol - attackerCol)
-    
-    return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
 end
 
 function InGameUI:highlightAvailableMoves(unit)
@@ -574,7 +455,7 @@ function InGameUI:drawTimeLeft(timeLeft)
     text(string.format("%.1f", math.max(0.0, timeLeft)), spec.leftX - 1, spec.largeY - 1)
     
     fill(spec.color)
-
+    
     fontSize(spec.smallFont)
     text("timer", spec.leftX, spec.smallY)
     
@@ -608,8 +489,6 @@ function InGameUI:drawMovesLeft(movesLeft)
     popStyle()
 end
 
-
-
 function InGameUI:touched(touch)
     if touch.state == ENDED then
         if self:isTouchWithinEndTurnButton(touch) then
@@ -630,7 +509,7 @@ function InGameUI:drawEndTurnButton()
             x = self.map.offsetX + self.map.width + ((buttonSide + gapMargin) / 2), 
             y = self.map.offsetY + self.map.height - (buttonSide / 2), 
             width = buttonSide, 
-            height = buttonSide}
+        height = buttonSide}
     else
         gapSize = (math.max(WIDTH, HEIGHT) - self.map.height) / 2
         self.endTurnButtonBounds = {
@@ -655,7 +534,6 @@ end
 
 function InGameUI:isTouchWithinEndTurnButton(touch)
     local bounds = self.endTurnButtonBounds
-    --print(bounds.x, "-", bounds.y, "-", bounds.width, "-", bounds.height)
     local halfW, halfH = bounds.width / 2, bounds.height / 2
     local leftX, rightX = bounds.x - halfW, bounds.x + halfW
     local topY, bottomY = bounds.y + halfH, bounds.y - halfH
@@ -664,3 +542,237 @@ function InGameUI:isTouchWithinEndTurnButton(touch)
     return touch.x >= leftX and touch.x <= rightX
     and touch.y >= bottomY and touch.y <= topY
 end
+
+--[[
+function InGameUI:drawAnimatingArrow(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
+    aColor = aColor or color(236, 67, 93)
+    startPoint = startPoint or vec2(WIDTH * 0.4, HEIGHT/2)
+    endPoint = endPoint or vec2(WIDTH * 0.6, HEIGHT/2)
+    width = width or HEIGHT * 0.25
+    arrowHeadLength = arrowHeadLength or WIDTH * 0.1
+    speed = speed or 13.5
+    distance = distance or 10
+    local direction = (endPoint - startPoint):normalize()
+    local perpDirection = vec2(-direction.y, direction.x)
+    
+    local animationOffset = math.sin(os.clock() * speed) * distance
+    
+    local arrowHeadPoint1 = endPoint + direction * animationOffset
+    local arrowHeadPoint2 = arrowHeadPoint1 - direction * arrowHeadLength + perpDirection * (width / 2)
+    local arrowHeadPoint3 = arrowHeadPoint1 - direction * arrowHeadLength - perpDirection * (width / 2)
+    
+    local arrowBasePoint1 = startPoint + perpDirection * (width * 0.8 / 2)
+    local arrowBasePoint2 = startPoint - perpDirection * (width * 0.8 / 2)
+    local arrowBasePoint3 = arrowHeadPoint3 + perpDirection * (width * 0.1)
+    local arrowBasePoint4 = arrowHeadPoint2 - perpDirection * (width * 0.1)
+    
+    local arrowHead = {arrowHeadPoint1, arrowHeadPoint2, arrowHeadPoint3}
+    local arrowBase = {arrowBasePoint1, arrowBasePoint2, arrowBasePoint3, arrowBasePoint4}
+    
+    local arrowHeadTriangulation = triangulate(arrowHead)
+    local arrowBaseTriangulation = triangulate(arrowBase)
+    
+    for _, v in ipairs(arrowBaseTriangulation) do
+        table.insert(arrowHeadTriangulation, v)
+    end
+    
+    local arrowMesh = mesh()
+    arrowMesh.vertices = arrowHeadTriangulation
+    arrowMesh:setColors(aColor)
+    
+    arrowMesh:draw()
+end
+]]
+
+
+--[[
+true mesh rounded rectangle. Original by @LoopSpace
+with anti-aliasing, optional fill and stroke components, optional texture that preserves aspect ratio of original image, automatic mesh caching
+usage: RoundedRectangle{key = arg, key2 = arg2}
+required: x;y;w;h:  dimensions of the rectangle
+optional: radius:   corner rounding radius, defaults to 6;
+corners:  bitwise flag indicating which corners to round, defaults to 15 (all corners).
+Corners are numbered 1,2,4,8 starting in lower-left corner proceeding clockwise
+eg to round the two bottom corners use: 1 | 8
+to round all the corners except the top-left use: ~ 2
+tex:      texture image
+texCoord: vec4 specifying x,y,width,and height to use as texture coordinates
+scale:    size of rect (using scale)
+use standard fill(), stroke(), strokeWidth() to set body fill color, outline stroke color and stroke width
+]]
+function roundRect(x, y, w, h, radius)
+roundedRectangle({
+x=x, y=y, w=w, h=h, radius=radius
+})
+end
+local __RRects = {}
+function roundedRectangle(t) 
+local s = t.radius or 8
+local c = t.corners or 15
+local w = math.max(t.w+1,2*s)+1
+local h = math.max(t.h,2*s)+2
+local hasTexture = 0
+local texCoord = t.texCoord or vec4(0,0,1,1) --default to bottom-left-most corner, full with and height
+if t.tex then hasTexture = 1 end
+local label = table.concat({w,h,s,c,hasTexture,texCoord.x,texCoord.y},",")
+if not __RRects[label] then
+local rr = mesh()
+rr.shader = shader(rrectshad.vert, rrectshad.frag)
+
+local v = {}
+local no = {}
+
+local n = math.max(3, s//2)
+local o,dx,dy
+local edge, cent = vec3(0,0,1), vec3(0,0,0)
+for j = 1,4 do
+    dx = 1 - 2*(((j+1)//2)%2)
+    dy = -1 + 2*((j//2)%2)
+    o = vec2(dx * (w * 0.5 - s), dy * (h * 0.5 - s))
+    --  if math.floor(c/2^(j-1))%2 == 0 then
+    local bit = 2^(j-1)
+    if c & bit == bit then
+        for i = 1,n do
+            
+            v[#v+1] = o
+            v[#v+1] = o + vec2(dx * s * math.cos((i-1) * math.pi/(2*n)), dy * s * math.sin((i-1) * math.pi/(2*n)))
+            v[#v+1] = o + vec2(dx * s * math.cos(i * math.pi/(2*n)), dy * s * math.sin(i * math.pi/(2*n)))
+            no[#no+1] = cent
+            no[#no+1] = edge
+            no[#no+1] = edge
+        end
+    else
+        v[#v+1] = o
+        v[#v+1] = o + vec2(dx * s,0)
+        v[#v+1] = o + vec2(dx * s,dy * s)
+        v[#v+1] = o
+        v[#v+1] = o + vec2(0,dy * s)
+        v[#v+1] = o + vec2(dx * s,dy * s)
+        local new = {cent, edge, edge, cent, edge, edge}
+        for i=1,#new do
+            no[#no+1] = new[i]
+        end
+    end
+end
+-- print("vertices", #v)
+--  r = (#v/6)+1
+rr.vertices = v
+
+rr:addRect(0,0,w-2*s,h-2*s)
+rr:addRect(0,(h-s)/2,w-2*s,s)
+rr:addRect(0,-(h-s)/2,w-2*s,s)
+rr:addRect(-(w-s)/2, 0, s, h - 2*s)
+rr:addRect((w-s)/2, 0, s, h - 2*s)
+--mark edges
+local new = {cent,cent,cent, cent,cent,cent,
+    edge,cent,cent, edge,cent,edge,
+    cent,edge,edge, cent,edge,cent,
+    edge,edge,cent, edge,cent,cent,
+cent,cent,edge, cent,edge,edge}
+for i=1,#new do
+    no[#no+1] = new[i]
+end
+rr.normals = no
+--texture
+if t.tex then
+    rr.shader.fragmentProgram = rrectshad.fragTex
+    rr.texture = t.tex
+    
+    local w,h = t.tex.width,t.tex.height
+    local textureOffsetX,textureOffsetY = texCoord.x,texCoord.y
+    
+    local coordTable = {}
+    for i,v in ipairs(rr.vertices) do
+        coordTable[i] = vec2((v.x + textureOffsetX)/w, (v.y + textureOffsetY)/h)
+    end
+    rr.texCoords = coordTable
+end
+local sc = 1/math.max(2, s)
+rr.shader.scale = sc --set the scale, so that we get consistent one pixel anti-aliasing, regardless of size of corners
+__RRects[label] = rr
+end
+__RRects[label].shader.fillColor = color(fill())
+if strokeWidth() == 0 then
+__RRects[label].shader.strokeColor = color(fill())
+else
+__RRects[label].shader.strokeColor = color(stroke())
+end
+
+if t.resetTex then
+__RRects[label].texture = t.resetTex
+t.resetTex = nil
+end
+local sc = 0.25/math.max(2, s)
+__RRects[label].shader.strokeWidth =  strokeWidth() * 0.1
+pushMatrix()
+translate(t.x,t.y)
+scale(t.scale or 1)
+__RRects[label]:draw()
+popMatrix()
+end
+
+rrectshad ={
+vert=[[
+uniform mat4 modelViewProjection;
+
+attribute vec4 position;
+
+//attribute vec4 color;
+attribute vec2 texCoord;
+attribute vec3 normal;
+
+//varying lowp vec4 vColor;
+varying highp vec2 vTexCoord;
+varying vec3 vNormal;
+
+void main()
+{
+//  vColor = color;
+vTexCoord = texCoord;
+vNormal = normal;
+gl_Position = modelViewProjection * position;
+}
+]],
+frag=[[
+precision highp float;
+
+uniform lowp vec4 fillColor;
+uniform lowp vec4 strokeColor;
+uniform float scale;
+uniform float strokeWidth;
+
+//varying lowp vec4 vColor;
+varying highp vec2 vTexCoord;
+varying vec3 vNormal;
+
+void main()
+{
+lowp vec4 col = mix(strokeColor, fillColor, smoothstep((1. - strokeWidth) - scale * 0.5, (1. - strokeWidth) - scale * 1.5 , vNormal.z)); //0.95, 0.92,
+col = mix(vec4(col.rgb, 0.), col, smoothstep(1., 1.-scale, vNormal.z) );
+// col *= smoothstep(1., 1.-scale, vNormal.z);
+gl_FragColor = col;
+}
+]],
+fragTex=[[
+precision highp float;
+
+uniform lowp sampler2D texture;
+uniform lowp vec4 fillColor;
+uniform lowp vec4 strokeColor;
+uniform float scale;
+uniform float strokeWidth;
+
+//varying lowp vec4 vColor;
+varying highp vec2 vTexCoord;
+varying vec3 vNormal;
+
+void main()
+{
+vec4 pixel = texture2D(texture, vTexCoord) * fillColor;
+lowp vec4 col = mix(strokeColor, pixel, smoothstep(1. - strokeWidth - scale * 0.5, 1. - strokeWidth - scale * 1.5, vNormal.z)); //0.95, 0.92,
+// col = mix(vec4(0.), col, smoothstep(1., 1.-scale, vNormal.z) );
+col *= smoothstep(1., 1.-scale, vNormal.z);
+gl_FragColor = col;
+}
+]]
+}

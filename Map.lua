@@ -59,8 +59,15 @@ function Map:init(x, y, width, height, cellsPerSide)
     lowColor = self.lowestElevationColor
 end
 
--- Rest of the methods remain unchanged
-
+function Map:isAttackable(attacker, target)
+    local attackerRow, attackerCol = self:pointToCellRowAndColumn(attacker.x, attacker.y)
+    local targetRow, targetCol = self:pointToCellRowAndColumn(target.x, target.y)
+    
+    local rowDelta = math.abs(targetRow - attackerRow)
+    local colDelta = math.abs(targetCol - attackerCol)
+    
+    return (rowDelta == 1 and colDelta == 0) or (rowDelta == 0 and colDelta == 1)
+end
 
 function Map:lerpColors(amount, color1, color2)
     function lerp(a, b, amount)
@@ -106,6 +113,16 @@ function Map:draw()
     end
 end
 
+function Map:isAdjacent(row1, col1, row2, col2)
+    local rowDiff = math.abs(row1 - row2)
+    local colDiff = math.abs(col1 - col2)
+    
+    if (rowDiff == 1 and colDiff == 0) or (rowDiff == 0 and colDiff == 1) then
+        return true
+    else
+        return false
+    end
+end
 
 function Map:pointToCellRowAndColumn(x, y)
     local col = math.floor((x - self.offsetX) / self.cellSize) + 1

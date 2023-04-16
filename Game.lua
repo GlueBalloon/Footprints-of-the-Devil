@@ -1,3 +1,12 @@
+-- helper functions
+function table_contains(tbl, value)
+    for _, v in ipairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
 
 -- Game
 Game = class()
@@ -5,14 +14,17 @@ Game = class()
 function Game:init()
     font("ArialRoundedMTBold")
     self.gameState = "inGame"
-   -- local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
+    -- local buttonHeight = (math.min(WIDTH, HEIGHT)) * 0.07
     local buttonHeight = 0
     local cellsPerSide = 9
     local sideSize = (math.min(WIDTH, HEIGHT)) * 0.95
     local mapX, mapY = (WIDTH - sideSize) * 0.5, (HEIGHT - sideSize + buttonHeight) * 0.5
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
-    local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222), SimpleLogicModule())
+    local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
+    if false then
+        aiPlayer.logicModule = SimpleLogicModule()
+    end
     self.players = {player1, aiPlayer}
     self.invoker = Invoker()
     self.turnSystem = TurnSystem(self.players, 5, 6, self.invoker)
@@ -45,7 +57,7 @@ function Game:init()
         self:touched(touch)
     end
     self.saveManager = SaveManager()
-    self.unitManager.units = self:generateRandomUnits(9, 5)  
+    self.unitManager.units = self:generateRandomUnits(9, 9)  
     local buttonMargin = sideSize * 0.0091 
     local bottomButtonWidth = (sideSize - buttonMargin) / 2
     local bottomButtonY = mapY - buttonHeight - buttonMargin
@@ -56,6 +68,7 @@ function Game:init()
     self.turnSystem:nextTurn(self.players[1].team)
     self:defineGameQueries()
     aiPlayer.queries = self.queries
+    self.inGameUI.queries = self.queries
 end
 
 function Game:defineGameQueries()
@@ -87,6 +100,32 @@ function Game:defineGameQueries()
         local nextTurnCommand = NextTurnCommand(game.turnSystem)
         game.invoker:executeCommand(nextTurnCommand)
     end
+    self.queries.isFlanked = function(self, unit)
+        return game:isFlanked(unit)
+    end
+    self.queries.attackableUnits = function(self, selectedUnit, units)
+        if not selectedUnit then
+            return
+        end
+        local selectedUnitAttackable = {}
+        local otherAttackable = {}
+        
+        for _, unit in ipairs(units) do
+            if unit.team ~= selectedUnit.team then
+                if game.map:isAttackable(selectedUnit, unit) then
+                    table.insert(selectedUnitAttackable, unit)
+                else
+                    for _, otherUnit in ipairs(units) do
+                        if otherUnit ~= selectedUnit and otherUnit.team == selectedUnit.team and game.map:isAttackable(otherUnit, unit) then
+                            table.insert(otherAttackable, unit)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+        return selectedUnitAttackable, otherAttackable
+    end   
 end
 
 function Game:getPlayerByTeam(team)
@@ -110,15 +149,17 @@ function Game:draw(deltaTime)
     self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
     self.inGameUI:drawMovesLeft(movesLeft)
     self.inGameUI:drawAllUnits(self.unitManager.units)
-    self.inGameUI:drawAttackableTargets(self.unitManager.units)
+  --  self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawBadgesAndAnimations()
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeFunction)
     -- AI turn handling
     local aiPlayer = self.players[2]
-    if self.queries:getCurrentPlayer().team == aiPlayer.team and not self.turnSystem.turnChangeAnimationInProgress then
-        local actNow = math.random(20) == 1
+    if self.queries:getCurrentPlayer().team == aiPlayer.team and
+        aiPlayer.logicModule and not 
+        self.turnSystem.turnChangeAnimationInProgress then
+        local actNow = math.random(400) == 1
         if not aiPlayer.aiActionTime or 
-        os.clock() - aiPlayer.aiActionTime > 0.5 or -- Wait
+        os.clock() - aiPlayer.aiActionTime > 0.6 or -- Wait
         actNow then 
             aiPlayer.aiActionTime = os.clock()
             
@@ -126,9 +167,14 @@ function Game:draw(deltaTime)
             
             if not actionTaken then
                 aiPlayer.queries:endTurn()
-            end
+            else
+                self:advanceMoveCounter()
+            end 
         end
     end
+    self.inGameUI.animation:update(DeltaTime)
+    self.inGameUI.animation:drawArrows()
+    self.inGameUI:draw(self.unitManager.units)
     self.turnSystem:update(deltaTime)
 end
 
@@ -276,6 +322,15 @@ function Game:isCellOccupied(units, row, col)
     return false
 end
 
+function Game:advanceMoveCounter()
+    self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
+    if self.turnSystem.moveCounter >= self.turnSystem.movesPerTurn then
+        local nextTurnCommand = NextTurnCommand(self.turnSystem)
+        self.invoker:executeCommand(nextTurnCommand)
+    end
+end
+
+--[[
 function Game:touched(touch)
     if self.turnSystem.turnChangeAnimationInProgress then
         self.inGameUI.selectedUnit = nil
@@ -296,19 +351,11 @@ function Game:touched(touch)
                     if self.inGameUI:isAttackable(self.inGameUI.selectedUnit, unit) then
                         self.inGameUI:drawCrosshairsOn(unit, true)
                     else
-                        self.inGameUI.crosshairTweens[unit] = nil
+                        self.inGameUI.animation.crosshairTweens[unit] = nil
                     end 
                 end
                 
-                
-                self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
-                
-                local teamUnits = 0
-                for _, unit in ipairs(units) do
-                    if unit.team == self.turnSystem:getCurrentPlayer().team then
-                        teamUnits = teamUnits + 1
-                    end
-                end
+                self:advanceMoveCounter()
             else
                 -- Check if another unit of the same team is touched
                 for _, unit in ipairs(units) do
@@ -318,15 +365,11 @@ function Game:touched(touch)
                         elseif self.inGameUI:isAttackable(self.inGameUI.selectedUnit, unit) then
                             local attackCommand = AttackCommand(self.attackFunction, self.inGameUI.selectedUnit, unit)
                             self.invoker:executeCommand(attackCommand)
-                            self.turnSystem.moveCounter = self.turnSystem.moveCounter + 1
+                            self:advanceMoveCounter()
                         end
                         break
                     end
                 end
-            end
-            if self.turnSystem.moveCounter >= self.turnSystem.movesPerTurn then
-                local nextTurnCommand = NextTurnCommand(self.turnSystem)
-                self.invoker:executeCommand(nextTurnCommand)
             end
         else
             for _, unit in ipairs(units) do
@@ -338,3 +381,56 @@ function Game:touched(touch)
         end
     end
 end
+]]
+
+function Game:touched(touch)
+    if self.turnSystem.turnChangeAnimationInProgress then
+        self.inGameUI.selectedUnit = nil
+        return
+    end
+    self.inGameUI:touched(touch)
+    local units = self.unitManager.units
+    if touch.state == BEGAN then
+        local row, col = self.map:pointToCellRowAndColumn(touch.x, touch.y)
+        if self.inGameUI.selectedUnit and row and col then
+            local validMove = self.inGameUI:isValidMove(self.inGameUI.selectedUnit, row, col, units)
+            if validMove then
+                local moveCommand = MoveCommand(self.map.rowColToPointFunction, self.inGameUI.selectedUnit, row, col)
+                self.invoker:executeCommand(moveCommand)
+                
+                -- Check for attackable units after a unit has moved
+                for _, unit in ipairs(units) do
+                    if self.map:isAttackable(self.inGameUI.selectedUnit, unit) then
+                        self.inGameUI.animation:addCrosshairAnimation(unit, true)
+                    else
+                        self.inGameUI.animation.crosshairTweens[unit] = nil
+                    end 
+                end
+                
+                self:advanceMoveCounter()
+            else
+                -- Check if another unit of the same team is touched
+                for _, unit in ipairs(units) do
+                    if game:unitContainsPoint(unit, touch.x, touch.y) then
+                        if unit.team == self.turnSystem:getCurrentPlayer().team then
+                            self.inGameUI.selectedUnit = unit
+                        elseif self.map:isAttackable(self.inGameUI.selectedUnit, unit) then
+                            local attackCommand = AttackCommand(self.attackFunction, self.inGameUI.selectedUnit, unit)
+                            self.invoker:executeCommand(attackCommand)
+                            self:advanceMoveCounter()
+                        end
+                        break
+                    end
+                end
+            end
+        else
+            for _, unit in ipairs(units) do
+                if game:unitContainsPoint(unit, touch.x, touch.y) and unit.team == self.turnSystem:getCurrentPlayer().team then
+                    self.inGameUI.selectedUnit = unit
+                    break
+                end
+            end
+        end
+    end
+end
+

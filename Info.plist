@@ -11,6 +11,7 @@
 		<string>Game</string>
 		<string>GameQueries</string>
 		<string>InGameUI</string>
+		<string>Animation</string>
 		<string>Invoker_n_Commands</string>
 		<string>AIPlayer_n_Logic</string>
 		<string>Player</string>
@@ -19,7 +20,6 @@
 		<string>SaveManager</string>
 		<string>Map</string>
 		<string>Credit</string>
-		<string>RoundedRect</string>
 	</array>
 	<key>Dependencies</key>
 	<array>
