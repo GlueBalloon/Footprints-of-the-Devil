@@ -12,13 +12,13 @@
 		<string>GameQueries</string>
 		<string>InGameUI</string>
 		<string>Animation</string>
+		<string>Map</string>
 		<string>Invoker_n_Commands</string>
 		<string>AIPlayer_n_Logic</string>
 		<string>Player</string>
 		<string>TurnSystem</string>
 		<string>Unit_n_UnitManager</string>
 		<string>SaveManager</string>
-		<string>Map</string>
 		<string>Credit</string>
 	</array>
 	<key>Dependencies</key>

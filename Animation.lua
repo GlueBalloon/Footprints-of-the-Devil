@@ -17,6 +17,10 @@ function Animation:update(dt)
     end
 end
 
+function Animation:clearCrosshairs()
+    self.crosshairTweens = {}
+end
+
 function Animation:drawCrosshairs()
     for unit, crosshairTweenData in pairs(self.crosshairTweens) do
         self:drawCrosshairsOn(unit, crosshairTweenData.attackable, self.currentPlayerCombatColor, self.otherPlayerCombatColor, self.map, self.crosshairTweens)

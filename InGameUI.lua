@@ -120,18 +120,34 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
 end
 
 function InGameUI:updateCrosshairsForAttackableUnits(units)
-    local selectedUnitAttackable, otherAttackable = self.queries:attackableUnits(self.selectedUnit, units)
+    local currentPlayerTeam = self.queries:getCurrentPlayer().team
+    local attackableUnits = {}
     
     for _, unit in ipairs(units) do
-        if self.selectedUnit and table_contains(selectedUnitAttackable, unit) then
-            self.animation:addCrosshairAnimation(unit, true)
-        elseif self.selectedUnit and self.selectedUnit ~= unit and unit.team ~= self.selectedUnit.team and table_contains(otherAttackable, unit) then
-            self.animation:addCrosshairAnimation(unit, false)
-        else
+        if unit.team ~= currentPlayerTeam then
+            for _, otherUnit in ipairs(units) do
+                if otherUnit.team == currentPlayerTeam and self.map:isAttackable(otherUnit, unit) then
+                    attackableUnits[unit] = otherUnit
+                    break
+                end
+            end
+        end
+    end
+    
+    for _, unit in ipairs(units) do
+        if unit.team == currentPlayerTeam then
             self.animation.crosshairTweens[unit] = nil
+        else
+            if attackableUnits[unit] then
+                local isRedCrosshair = self.selectedUnit and attackableUnits[unit] == self.selectedUnit
+                self.animation:addCrosshairAnimation(unit, isRedCrosshair)
+            else
+                self.animation.crosshairTweens[unit] = nil
+            end
         end
     end
 end
+
 
 function InGameUI:updateFlankingArrows(units)
     local sapiensUnits = {}
@@ -160,9 +176,9 @@ function InGameUI:updateFlankingArrows(units)
             
             if #flankingSapiens > 0 then
                 if neanderthal == self.selectedUnit then
-                    self.animation:drawFlankingArrows(neanderthal, flankingSapiens, self.currentPlayerCombatColor)
+                    self.animation:drawArrows(neanderthal, flankingSapiens, self.currentPlayerCombatColor)
                 else
-                    self.animation:drawFlankingArrows(neanderthal, flankingSapiens, self.otherPlayerCombatColor)
+                    self.animation:drawArrows(neanderthal, flankingSapiens, self.otherPlayerCombatColor)
                 end
             end
         end
