@@ -87,4 +87,18 @@ function UnitManager:getUnits()
     return self.units
 end
 
+function UnitManager:getTeams()
+    local teams = {}
+    
+    for _, unit in ipairs(self.units) do
+        if not teams[unit.team] then
+            teams[unit.team] = {}
+        end
+        table.insert(teams[unit.team], unit)
+    end
+    
+    return teams
+end
+
+
 

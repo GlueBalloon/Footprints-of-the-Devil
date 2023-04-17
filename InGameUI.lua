@@ -22,7 +22,6 @@ function InGameUI:init(map, queries)
     self.currentPlayerCombatColor = color(255, 0, 45)
     self.otherPlayerCombatColor = color(215)
     self.animation = Animation(map, self.currentPlayerCombatColor, self.otherPlayerCombatColor)
-    self.alreadyCrosshaired = {}
     local countdownsW = self.map.cellSize * 5.25
     local largeText = "0.0"
     local smallText = "timer timer timer"
@@ -50,10 +49,9 @@ function InGameUI:draw(units)
 end
 
 function InGameUI:updateAndDrawIndicators(units)
-    self.alreadyCrosshaired = {}
     self:updateCrosshairs(units)
     self:updateFlankingArrows(units)
-    self.animation:drawArrows()
+    self.animation:drawFlankingArrows()
     self.animation:drawCrosshairs()
 end
 
@@ -68,9 +66,9 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         local elapsedTime = os.clock() - self.announcementStartTime
         local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
         local endSize = 2.2 -- Adjust this value to control the ending size of the rectangle
-        local scaleSpeed = 1.0 -- Adjust this value to control the speed of the scaling
+        local scaleSpeed = 0.8 -- Adjust this value to control the speed of the scaling
         local timeFadeoutBegins = 0.95 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 1.15 -- Adjust this value to control the time when fade-out ends
+        local timeFadeoutEnds = 1.55 -- Adjust this value to control the time when fade-out ends
         
         local scaleFactor = startSize + scaleSpeed * elapsedTime
         scaleFactor = math.min(scaleFactor, endSize)
@@ -169,6 +167,7 @@ end
 
 
 
+--[[
 function InGameUI:updateFlankingArrows(units)
     local sapiensUnits = {}
     local neanderthalUnits = {}
@@ -204,6 +203,40 @@ function InGameUI:updateFlankingArrows(units)
         end
     end
 end
+]]
+
+function InGameUI:updateFlankingArrows(units)
+    local currentPlayerTeam = self.queries:getCurrentPlayer().team
+    local teamsTable = self.queries:getTeams()
+    for k, v in pairs(teamsTable) do
+    end
+    local sapiensUnits = teamsTable.sapiens
+    local neanderthalUnits = teamsTable.neanderthal
+    
+    self.animation.arrowData = {} -- Reset the arrow data table
+    
+    for _, neanderthal in ipairs(neanderthalUnits) do
+        local flankingSapiens = {}
+        local isFlanked = self.queries:isFlanked(neanderthal)
+        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        
+        if isFlanked then
+            for _, sapiens in ipairs(sapiensUnits) do
+                local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
+                if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
+                    table.insert(flankingSapiens, sapiens)
+                end
+            end
+            
+            if #flankingSapiens > 0 then
+                local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+                table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = flankingSapiens, color = arrowColor})
+            end
+        end
+    end
+end
+
+
 
 
 function InGameUI:createDamageAnimation(unit, damage)

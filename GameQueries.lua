@@ -16,8 +16,9 @@ end
 function GameQueries:getCurrentPlayer()
 end
 
-function GameQueries:getPlayerByTeam(team)
+function GameQueries:getTeams(units)
 end
+
 
 function GameQueries:moveUnit(unit, row, col)
 end

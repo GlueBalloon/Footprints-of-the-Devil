@@ -84,7 +84,7 @@ function Game:defineGameQueries()
         return game:isCellOccupied(game.unitManager.units, row, col) 
     end
     self.queries.getCurrentPlayer = function(self) return game.turnSystem:getCurrentPlayer() end
-    self.queries.getPlayerByTeam = function(self, team) return game:getPlayerByTeam(team) end 
+    self.queries.getTeams = function(self) return game.unitManager:getTeams(team) end 
     self.queries.moveUnit = function(self, unit, row, col)
         local moveCommand = MoveCommand(game.map.rowColToPointFunction, unit, row, col)
         game.invoker:executeCommand(moveCommand)
@@ -128,15 +128,6 @@ function Game:defineGameQueries()
     end   
 end
 
-function Game:getPlayerByTeam(team)
-    for _, player in ipairs(self.game.players) do
-        if player.team == team then
-            return player
-        end
-    end
-    return nil
-end
-
 function Game:draw(deltaTime)
     if self.gameState == "inGame" then
         self.map:draw()
@@ -173,7 +164,7 @@ function Game:draw(deltaTime)
         end
     end
     self.inGameUI.animation:update(DeltaTime)
-    self.inGameUI.animation:drawArrows()
+   -- self.inGameUI.animation:drawArrows()
     self.inGameUI:draw(self.unitManager.units)
     self.turnSystem:update(deltaTime)
 end
@@ -241,13 +232,13 @@ function Game:isFlanked(neanderthal)
         -- Check if newRow and newCol are within map bounds
         for _, unit in ipairs(self.unitManager.units) do
             if unit.team == "sapiens" and self:unitContainsPoint(unit, newX, newY) then
+                print("found flanked unit: ", flankedStatus)
                 flankingSapiens = flankingSapiens + 1
             end
         end
     end
     
     local flankedStatus = flankingSapiens >= 2
-    print("Game:isFlanked(neanderthal): ", flankedStatus)
     return flankedStatus
 end
 
