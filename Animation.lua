@@ -114,20 +114,24 @@ function Animation:drawFlankingArrows()
         local neanderthal = arrowData.neanderthal
         local flankingSapiens = arrowData.flankingSapiens
         local arrowColor = arrowData.color
+        local cSize = self.map.cellSize
         
         for _, sapiens in ipairs(flankingSapiens) do
-            local startPoint = vec2(sapiens.x, sapiens.y)
-            local endPoint = vec2(neanderthal.x, neanderthal.y)
-            local direction = (endPoint - startPoint):normalize()
+            local arrowOffset = cSize * 0.4 -- Adjust this value between 0 and 1 to control the arrow start distance as a percentage of cell size
+            local arrowLength = cSize * 0.2 -- Adjust this value between 0 and 1 to control the arrow length as a percentage of cell size
+            
+            local direction = (vec2(neanderthal.x, neanderthal.y) - vec2(sapiens.x, sapiens.y)):normalize()
+            local startPoint = vec2(sapiens.x, sapiens.y) + direction * arrowOffset
+            local endPoint = startPoint + direction * arrowLength
             
             -- Only create a new mesh and tween if it doesn't exist
             if not self.arrowMeshes[sapiens] then
-                local width = 5 -- Provide a default value or use your own
-                local arrowHeadLength = 10 -- Provide a default value or use your own
+                local width = cSize * 0.6 -- Provide a default value or use your own
+                local arrowHeadLength = arrowLength -- Provide a default value or use your own
                 local speed = 1 -- Provide a default value or use your own
-                local distance = 10 -- Provide a default value or use your own
+                local distance = cSize * 0.2 -- Provide a default value or use your own
                 
-                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint)
+                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
                 self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint}
                 
                 local duration = 1 -- Adjust this value to control the animation duration

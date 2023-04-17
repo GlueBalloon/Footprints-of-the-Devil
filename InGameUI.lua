@@ -65,10 +65,10 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         
         local elapsedTime = os.clock() - self.announcementStartTime
         local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
-        local endSize = 2.2 -- Adjust this value to control the ending size of the rectangle
-        local scaleSpeed = 0.8 -- Adjust this value to control the speed of the scaling
-        local timeFadeoutBegins = 0.95 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 1.55 -- Adjust this value to control the time when fade-out ends
+        local endSize = 1 -- Adjust this value to control the ending size of the rectangle
+        local scaleSpeed = 3 -- Adjust this value to control the speed of the scaling
+        local timeFadeoutBegins = 0.1 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 0.2 -- Adjust this value to control the time when fade-out ends
         
         local scaleFactor = startSize + scaleSpeed * elapsedTime
         scaleFactor = math.min(scaleFactor, endSize)
