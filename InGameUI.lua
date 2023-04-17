@@ -51,7 +51,7 @@ end
 
 function InGameUI:updateAndDrawIndicators(units)
     self.alreadyCrosshaired = {}
-    self:updateCrosshairsForAttackableUnits(units)
+    self:updateCrosshairs(units)
     self:updateFlankingArrows(units)
     self.animation:drawArrows()
     self.animation:drawCrosshairs()
@@ -68,9 +68,9 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         local elapsedTime = os.clock() - self.announcementStartTime
         local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
         local endSize = 2.2 -- Adjust this value to control the ending size of the rectangle
-        local scaleSpeed = 1.8 -- Adjust this value to control the speed of the scaling
-        local timeFadeoutBegins = 0.25 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 0.55 -- Adjust this value to control the time when fade-out ends
+        local scaleSpeed = 1.0 -- Adjust this value to control the speed of the scaling
+        local timeFadeoutBegins = 0.95 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 1.15 -- Adjust this value to control the time when fade-out ends
         
         local scaleFactor = startSize + scaleSpeed * elapsedTime
         scaleFactor = math.min(scaleFactor, endSize)
@@ -119,14 +119,19 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
     end
 end
 
-function InGameUI:updateCrosshairsForAttackableUnits(units)
+function InGameUI:updateCrosshairs(units)
     local currentPlayerTeam = self.queries:getCurrentPlayer().team
     local attackableUnits = {}
     
+    --go through units
     for _, unit in ipairs(units) do
+        --if enemy found
         if unit.team ~= currentPlayerTeam then
+            --go through units again
             for _, otherUnit in ipairs(units) do
+                --if enemy is near player's unit
                 if otherUnit.team == currentPlayerTeam and self.map:isAttackable(otherUnit, unit) then
+                    --use enemy unit as key for player unit
                     attackableUnits[unit] = otherUnit
                     break
                 end
@@ -134,19 +139,34 @@ function InGameUI:updateCrosshairsForAttackableUnits(units)
         end
     end
     
+    --go through units
     for _, unit in ipairs(units) do
+        --if current player unit
         if unit.team == currentPlayerTeam then
+            --nil out any crosshair tween
             self.animation.crosshairTweens[unit] = nil
         else
+            --else if enemy unit is a key in attackables
             if attackableUnits[unit] then
+                --determine if crosshair should be red
                 local isRedCrosshair = self.selectedUnit and attackableUnits[unit] == self.selectedUnit
+                --add animation for crosshair
                 self.animation:addCrosshairAnimation(unit, isRedCrosshair)
             else
+                --if not a key in attackables nil any tween for it
                 self.animation.crosshairTweens[unit] = nil
             end
         end
     end
+    
+    --nil crosshairs with keys that are not in units table
+    for key, _ in pairs(self.animation.crosshairTweens) do
+        if table_contains(units, key) == false then
+            self.animation.crosshairTweens[key] = nil
+        end
+    end
 end
+
 
 
 function InGameUI:updateFlankingArrows(units)
