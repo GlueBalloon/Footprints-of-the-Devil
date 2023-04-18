@@ -165,46 +165,6 @@ function InGameUI:updateCrosshairs(units)
     end
 end
 
-
-
---[[
-function InGameUI:updateFlankingArrows(units)
-    local sapiensUnits = {}
-    local neanderthalUnits = {}
-    
-    for _, unit in ipairs(units) do
-        if unit.team == "sapiens" then
-            table.insert(sapiensUnits, unit)
-        elseif unit.team == "neanderthal" then
-            table.insert(neanderthalUnits, unit)
-        end
-    end
-    
-    for _, neanderthal in ipairs(neanderthalUnits) do
-        local flankingSapiens = {}
-        local isFlanked = self.queries:isFlanked(neanderthal)
-        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
-        
-        if isFlanked then
-            for _, sapiens in ipairs(sapiensUnits) do
-                local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
-                if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
-                    table.insert(flankingSapiens, sapiens)
-                end
-            end
-            
-            if #flankingSapiens > 0 then
-                if neanderthal == self.selectedUnit then
-                    self.animation:drawArrows(neanderthal, flankingSapiens, self.currentPlayerCombatColor)
-                else
-                    self.animation:drawArrows(neanderthal, flankingSapiens, self.otherPlayerCombatColor)
-                end
-            end
-        end
-    end
-end
-]]
-
 function InGameUI:updateFlankingArrows(units)
     local currentPlayerTeam = self.queries:getCurrentPlayer().team
     local teamsTable = self.queries:getTeams()
@@ -611,47 +571,6 @@ function InGameUI:isTouchWithinEndTurnButton(touch)
     return touch.x >= leftX and touch.x <= rightX
     and touch.y >= bottomY and touch.y <= topY
 end
-
---[[
-function InGameUI:drawAnimatingArrow(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
-    aColor = aColor or color(236, 67, 93)
-    startPoint = startPoint or vec2(WIDTH * 0.4, HEIGHT/2)
-    endPoint = endPoint or vec2(WIDTH * 0.6, HEIGHT/2)
-    width = width or HEIGHT * 0.25
-    arrowHeadLength = arrowHeadLength or WIDTH * 0.1
-    speed = speed or 13.5
-    distance = distance or 10
-    local direction = (endPoint - startPoint):normalize()
-    local perpDirection = vec2(-direction.y, direction.x)
-    
-    local animationOffset = math.sin(os.clock() * speed) * distance
-    
-    local arrowHeadPoint1 = endPoint + direction * animationOffset
-    local arrowHeadPoint2 = arrowHeadPoint1 - direction * arrowHeadLength + perpDirection * (width / 2)
-    local arrowHeadPoint3 = arrowHeadPoint1 - direction * arrowHeadLength - perpDirection * (width / 2)
-    
-    local arrowBasePoint1 = startPoint + perpDirection * (width * 0.8 / 2)
-    local arrowBasePoint2 = startPoint - perpDirection * (width * 0.8 / 2)
-    local arrowBasePoint3 = arrowHeadPoint3 + perpDirection * (width * 0.1)
-    local arrowBasePoint4 = arrowHeadPoint2 - perpDirection * (width * 0.1)
-    
-    local arrowHead = {arrowHeadPoint1, arrowHeadPoint2, arrowHeadPoint3}
-    local arrowBase = {arrowBasePoint1, arrowBasePoint2, arrowBasePoint3, arrowBasePoint4}
-    
-    local arrowHeadTriangulation = triangulate(arrowHead)
-    local arrowBaseTriangulation = triangulate(arrowBase)
-    
-    for _, v in ipairs(arrowBaseTriangulation) do
-        table.insert(arrowHeadTriangulation, v)
-    end
-    
-    local arrowMesh = mesh()
-    arrowMesh.vertices = arrowHeadTriangulation
-    arrowMesh:setColors(aColor)
-    
-    arrowMesh:draw()
-end
-]]
 
 
 --[[

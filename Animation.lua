@@ -11,6 +11,7 @@ function Animation:init(map, currentPlayerCombatColor, otherPlayerCombatColor)
     self.arrowTweens = {}
     self.crosshairsData = {}
     self.crosshairTweens = {} 
+    self.arrowTweenValue = 0
 end
 
 function Animation:update(dt)
@@ -110,6 +111,9 @@ function Animation:updateCrosshair(unit, crosshairImage, crosshairColor)
 end
 
 function Animation:drawFlankingArrows()
+    if not self.valueTween then
+        self.valueTween = tween(1, self, {arrowTweenValue = 10}, {loop = tween.loop.pingpong, easing = tween.easing.linear})
+    end
     for _, arrowData in ipairs(self.arrowData) do
         local neanderthal = arrowData.neanderthal
         local flankingSapiens = arrowData.flankingSapiens
@@ -117,86 +121,31 @@ function Animation:drawFlankingArrows()
         local cSize = self.map.cellSize
         
         for _, sapiens in ipairs(flankingSapiens) do
-            local arrowOffset = cSize * 0.4 -- Adjust this value between 0 and 1 to control the arrow start distance as a percentage of cell size
-            local arrowLength = cSize * 0.2 -- Adjust this value between 0 and 1 to control the arrow length as a percentage of cell size
+            local arrowOffset = cSize * 0.4
+            local arrowLength = cSize * 0.2
             
             local direction = (vec2(neanderthal.x, neanderthal.y) - vec2(sapiens.x, sapiens.y)):normalize()
             local startPoint = vec2(sapiens.x, sapiens.y) + direction * arrowOffset
             local endPoint = startPoint + direction * arrowLength
             
-            -- Only create a new mesh and tween if it doesn't exist
             if not self.arrowMeshes[sapiens] then
-                local width = cSize * 0.6 -- Provide a default value or use your own
-                local arrowHeadLength = arrowLength -- Provide a default value or use your own
-                local speed = 1 -- Provide a default value or use your own
-                local distance = cSize * 0.2 -- Provide a default value or use your own
+                local width = cSize * 0.6
+                local arrowHeadLength = arrowLength
                 
-                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
-                self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint}
-                
-                local duration = 1 -- Adjust this value to control the animation duration
-                local tweenId = tween(duration, self.arrowMeshes[sapiens], {startPoint = endPoint}, {loop = tween.loop.pingpong, easing = tween.easing.linear})
-                self.arrowTweens[sapiens] = tweenId
+                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength)
+                self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint, direction = direction}
             end
             
             local arrowMesh = self.arrowMeshes[sapiens].mesh
-            print("arrowMesh:draw()")
+            local arrowDirection = self.arrowMeshes[sapiens].direction
+            
+            pushMatrix()
+            translate(self.arrowTweenValue * arrowDirection.x, self.arrowTweenValue * arrowDirection.y)
             arrowMesh:draw()
+            popMatrix()
         end
     end
 end
-
-
-function Animation:drawFlankingArrows()
-    for _, arrowData in ipairs(self.arrowData) do
-        local neanderthal = arrowData.neanderthal
-        local flankingSapiens = arrowData.flankingSapiens
-        local arrowColor = arrowData.color
-        local cSize = self.map.cellSize
-        
-        for _, sapiens in ipairs(flankingSapiens) do
-            local arrowOffset = cSize * 0.4 -- Adjust this value between 0 and 1 to control the arrow start distance as a percentage of cell size
-            local arrowLength = cSize * 0.2 -- Adjust this value between 0 and 1 to control the arrow length as a percentage of cell size
-            
-            local direction = (vec2(neanderthal.x, neanderthal.y) - vec2(sapiens.x, sapiens.y)):normalize()
-            local startPoint = vec2(sapiens.x, sapiens.y) + direction * arrowOffset
-            local endPoint = startPoint + direction * arrowLength
-            
-            -- Only create a new mesh and tween if it doesn't exist
-            if not self.arrowMeshes[sapiens] then
-                local width = cSize * 0.6 -- Provide a default value or use your own
-                local arrowHeadLength = arrowLength -- Provide a default value or use your own
-                local speed = 1 -- Provide a default value or use your own
-                local distance = cSize * 0.2 -- Provide a default value or use your own
-                
-                -- Create arrow mesh only if it doesn't exist
-                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
-                self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint}
-            end
-            
-            local arrowMesh = self.arrowMeshes[sapiens].mesh
-            print("arrowMesh:draw()")
-            arrowMesh:draw()
-        end
-    end
-end
-
-
-
---[[
-function Animation:drawArrows()
-    for _, arrowData in ipairs(self.arrowMeshes) do
-        local animationOffset = math.sin(os.clock() * arrowData.speed) * arrowData.distance
-        local aColor = arrowData.mesh.color
-        local startPoint = arrowData.startPoint
-        local endPoint = arrowData.endPoint + animationOffset
-        local width = arrowData.width
-        local arrowHeadLength = arrowData.arrowHeadLength
-        local transformedMesh = self:createArrowMesh(arrowData.mesh.color, arrowData.startPoint, arrowData.endPoint + animationOffset, arrowData.width, arrowData.arrowHeadLength)
-        transformedMesh:draw()
-    end
-end
-]]
 
 function Animation:createArrowMesh(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
     aColor = aColor or color(236, 67, 93)
@@ -210,9 +159,7 @@ function Animation:createArrowMesh(aColor, startPoint, endPoint, width, arrowHea
     local direction = (endPoint - startPoint):normalize()
     local perpDirection = vec2(-direction.y, direction.x)
     
-    local animationOffset = math.sin(os.clock() * speed) * distance
-    
-    local arrowHeadPoint1 = endPoint + direction * animationOffset
+    local arrowHeadPoint1 = endPoint + direction
     local arrowHeadPoint2 = arrowHeadPoint1 - direction * arrowHeadLength + perpDirection * (width / 2)
     local arrowHeadPoint3 = arrowHeadPoint1 - direction * arrowHeadLength - perpDirection * (width / 2)
     
@@ -235,40 +182,4 @@ function Animation:createArrowMesh(aColor, startPoint, endPoint, width, arrowHea
     arrowMesh.vertices = arrowHeadTriangulation
     arrowMesh:setColors(aColor)
     return arrowMesh
-end
-
-function Animation:addArrowAnimation(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
-    local cSize = self.map.cellSize
-    aColor = aColor or color(236, 67, 93)
-    startPoint = startPoint or vec2(WIDTH * 0.4, HEIGHT/2)
-    endPoint = endPoint or vec2(WIDTH * 0.6, HEIGHT/2)
-    width = width or cSize * 0.6 -- Provide a default value or use your own
-    arrowHeadLength = arrowHeadLength or 50 -- Provide a default value or use your own
-    speed = speed or 1 -- Provide a default value or use your own
-    distance = distance or cSize * 0.2 -- Provide a default value or use your own
-    local arrowMesh = self:createArrowMesh(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
-    local arrowData = {
-        color = aColor,
-        mesh = arrowMesh,
-        startPoint = startPoint,
-        endPoint = endPoint,
-        width = width,
-        arrowHeadLength = arrowHeadLength,
-        speed = speed,
-        distance = distance
-    }
-    table.insert(self.arrowMeshes, arrowData)
-    
-    local duration = 1 / speed
-    local arrowTween = tween(duration, arrowData, {}, 'linear', function() self:removeArrowAnimation(arrowData) end)
-    table.insert(self.tweens, arrowTween)
-end
-
-function Animation:removeArrowAnimation(arrowData)
-    for i, data in ipairs(self.arrowMeshes) do
-        if data == arrowData then
-            table.remove(self.arrowMeshes, i)
-            break
-        end
-    end
 end
