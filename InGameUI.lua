@@ -179,8 +179,24 @@ function InGameUI:updateFlankingArrows(units)
     self.animation.arrowData = {} -- Reset the arrow data table
     
     for _, neanderthal in ipairs(neanderthalUnits) do
+        local flankingSapiens = {}
+        local isFlanked = self.queries:isFlanked(neanderthal)
         local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
         local adjacentCells = self.map:orthogonalCellsFor(nRow, nCol)
+        
+        if isFlanked then
+            for _, sapiens in ipairs(sapiensUnits) do
+                local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
+                if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
+                    table.insert(flankingSapiens, sapiens)
+                end
+            end
+            
+            if #flankingSapiens > 0 then
+                local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+                table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = flankingSapiens, color = arrowColor})
+            end
+        end
         
         for _, sapiens in ipairs(sapiensUnits) do
             local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
