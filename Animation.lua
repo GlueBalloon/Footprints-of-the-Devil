@@ -147,6 +147,39 @@ function Animation:drawFlankingArrows()
 end
 
 
+function Animation:drawFlankingArrows()
+    for _, arrowData in ipairs(self.arrowData) do
+        local neanderthal = arrowData.neanderthal
+        local flankingSapiens = arrowData.flankingSapiens
+        local arrowColor = arrowData.color
+        local cSize = self.map.cellSize
+        
+        for _, sapiens in ipairs(flankingSapiens) do
+            local arrowOffset = cSize * 0.4 -- Adjust this value between 0 and 1 to control the arrow start distance as a percentage of cell size
+            local arrowLength = cSize * 0.2 -- Adjust this value between 0 and 1 to control the arrow length as a percentage of cell size
+            
+            local direction = (vec2(neanderthal.x, neanderthal.y) - vec2(sapiens.x, sapiens.y)):normalize()
+            local startPoint = vec2(sapiens.x, sapiens.y) + direction * arrowOffset
+            local endPoint = startPoint + direction * arrowLength
+            
+            -- Only create a new mesh and tween if it doesn't exist
+            if not self.arrowMeshes[sapiens] then
+                local width = cSize * 0.6 -- Provide a default value or use your own
+                local arrowHeadLength = arrowLength -- Provide a default value or use your own
+                local speed = 1 -- Provide a default value or use your own
+                local distance = cSize * 0.2 -- Provide a default value or use your own
+                
+                -- Create arrow mesh only if it doesn't exist
+                local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
+                self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint}
+            end
+            
+            local arrowMesh = self.arrowMeshes[sapiens].mesh
+            print("arrowMesh:draw()")
+            arrowMesh:draw()
+        end
+    end
+end
 
 
 
@@ -205,6 +238,14 @@ function Animation:createArrowMesh(aColor, startPoint, endPoint, width, arrowHea
 end
 
 function Animation:addArrowAnimation(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
+    local cSize = self.map.cellSize
+    aColor = aColor or color(236, 67, 93)
+    startPoint = startPoint or vec2(WIDTH * 0.4, HEIGHT/2)
+    endPoint = endPoint or vec2(WIDTH * 0.6, HEIGHT/2)
+    width = width or cSize * 0.6 -- Provide a default value or use your own
+    arrowHeadLength = arrowHeadLength or 50 -- Provide a default value or use your own
+    speed = speed or 1 -- Provide a default value or use your own
+    distance = distance or cSize * 0.2 -- Provide a default value or use your own
     local arrowMesh = self:createArrowMesh(aColor, startPoint, endPoint, width, arrowHeadLength, speed, distance)
     local arrowData = {
         color = aColor,
