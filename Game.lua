@@ -22,7 +22,7 @@ function Game:init()
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
     local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
-    if false then
+    if true then
         aiPlayer.logicModule = SimpleLogicModule()
     end
     self.players = {player1, aiPlayer}
@@ -57,7 +57,7 @@ function Game:init()
         self:touched(touch)
     end
     self.saveManager = SaveManager()
-    self.unitManager.units = self:generateRandomUnits(9, 9)  
+    self.unitManager.units = self:generateRandomUnits(7, 7)  
     local buttonMargin = sideSize * 0.0091 
     local bottomButtonWidth = (sideSize - buttonMargin) / 2
     local bottomButtonY = mapY - buttonHeight - buttonMargin
@@ -275,7 +275,7 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
     
     for i = 1, sapiensCount do
         while true do
-            row = math.random(2, self.map.gridSize)
+            row = math.random(2, self.map.gridSize - 1)
             col = math.random(2, math.floor(self.map.gridSize / 2))
             if not self:isCellOccupied(units, row, col) then
                 break
@@ -290,7 +290,7 @@ function Game:generateRandomUnits(sapiensCount, neanderthalCount)
     for i = 1, neanderthalCount do
         while true do
             row = math.random(2, self.map.gridSize - 1)
-            col = math.random(math.ceil(self.map.gridSize / 2) + 2, self.map.gridSize - 1)
+            col = math.random(math.ceil(self.map.gridSize / 2) + 1, self.map.gridSize - 1)
             if not self:isCellOccupied(units, row, col) then
                 break
             end
