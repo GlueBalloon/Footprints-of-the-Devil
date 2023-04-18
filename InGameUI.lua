@@ -36,8 +36,10 @@ function InGameUI:init(map, queries)
         color = color(229, 225, 211, 173),
         leftX = self.map.offsetX + (self.map.width * 0.16),
         rightX = self.map.offsetX + (self.map.width * 0.75),
-        smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
-        largeY = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
+        smallYUpper = self.map.offsetY + self.map.height - (smallH * 0.6),
+        largeYUpper = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
+        smallYLower = self.map.offsetY + (smallH * 0.6),
+        largeYLower = self.map.offsetY + ((largeH + smallH) * 0.55),
         smallFont = smallFont,
         largeFont = largeFont
     }
@@ -53,6 +55,7 @@ function InGameUI:updateAndDrawIndicators(units)
     self:updateFlankingArrows(units)
     self.animation:drawFlankingArrows()
     self.animation:drawCrosshairs()
+    self.animation:drawYellowDots()
 end
 
 function InGameUI:announceTurn(team)
@@ -176,28 +179,41 @@ function InGameUI:updateFlankingArrows(units)
     self.animation.arrowData = {} -- Reset the arrow data table
     
     for _, neanderthal in ipairs(neanderthalUnits) do
-        local flankingSapiens = {}
-        local isFlanked = self.queries:isFlanked(neanderthal)
         local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        local adjacentCells = self.map:orthogonalCellsFor(nRow, nCol)
         
-        if isFlanked then
-            for _, sapiens in ipairs(sapiensUnits) do
-                local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
-                if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
-                    table.insert(flankingSapiens, sapiens)
+        for _, sapiens in ipairs(sapiensUnits) do
+            local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
+            if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
+                for _, cell in ipairs(adjacentCells) do
+                    local row, col = cell.row, cell.col
+                    local unitAtCell = self.queries:getUnitAt(row, col)
+                    -- Check if it's the Sapiens' turn
+                    if self.queries:getCurrentPlayer().team ~= "sapiens" then
+                        -- Empty the dotData if it's not the Sapiens' turn
+                        if #self.animation.dotData > 0 then
+                            self.animation.dotData = {}
+                        end
+                    else
+                        -- Add/update the yellow dots during the Sapiens' turn
+                        if not unitAtCell then
+                            -- No unit at the cell, draw a yellow dot
+                            local x, y = self.map:cellRowAndColumnToPoint(row, col)
+                            local dotRadius = self.map.cellSize * 0.1
+                            local dotColor = color(236, 197, 67) -- Yellow color
+                            
+                            -- Store the dot data for drawing later
+                            if not self.animation.dotData then
+                                self.animation.dotData = {}
+                            end
+                            table.insert(self.animation.dotData, {x = x, y = y, radius = dotRadius, color = dotColor})
+                        end
+                    end
                 end
-            end
-            
-            if #flankingSapiens > 0 then
-                local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
-                table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = flankingSapiens, color = arrowColor})
             end
         end
     end
 end
-
-
-
 
 function InGameUI:createDamageAnimation(unit, damage)
     local anim = {
@@ -478,18 +494,18 @@ function InGameUI:drawTimeLeft(timeLeft)
     fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
-    text("timer", spec.rightX - 1, spec.smallY - (self.map.height * 0.65) - 1)
+    text("timer", spec.rightX - 1, spec.smallYLower)
     
     fontSize(spec.largeFont)
-    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX - 1, spec.largeY - (self.map.height * 0.65) - 1)
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX - 1, spec.largeYLower)
     
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("timer", spec.rightX, spec.smallY - (self.map.height * 0.65))
+    text("timer", spec.rightX, spec.smallYLower)
     
     fontSize(spec.largeFont)
-    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX, spec.largeY - (self.map.height * 0.65))
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX, spec.largeYLower)
     
     popStyle()
 end
@@ -502,18 +518,18 @@ function InGameUI:drawMovesLeft(movesLeft)
     fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
-    text("moves", spec.leftX - 1,  spec.smallY - 1)
+    text("moves", spec.leftX - 1,  spec.smallYUpper - 1)
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.leftX - 1, spec.largeY - 1)
+    text(movesLeft, spec.leftX - 1, spec.largeYUpper - 1)
     
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("moves", spec.leftX, spec.smallY)
+    text("moves", spec.leftX, spec.smallYUpper)
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.leftX, spec.largeY)
+    text(movesLeft, spec.leftX, spec.largeYUpper)
     
     popStyle()
 end

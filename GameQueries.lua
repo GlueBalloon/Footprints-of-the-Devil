@@ -19,7 +19,6 @@ end
 function GameQueries:getTeams(units)
 end
 
-
 function GameQueries:moveUnit(unit, row, col)
 end
 

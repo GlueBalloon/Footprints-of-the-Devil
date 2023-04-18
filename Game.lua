@@ -22,7 +22,7 @@ function Game:init()
     self.map = Map(mapX, mapY, sideSize, sideSize, cellsPerSide)
     local player1 = Player(1, "sapiens", color(143, 236, 67, 226))
     local aiPlayer = AIPlayer(2, "neanderthal", color(73, 218, 234, 222))
-    if true then
+    if false then
         aiPlayer.logicModule = SimpleLogicModule()
     end
     self.players = {player1, aiPlayer}
@@ -139,7 +139,6 @@ function Game:draw(deltaTime)
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
 
     self.inGameUI:drawAllUnits(self.unitManager.units)
-  --  self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawBadgesAndAnimations()
     self.inGameUI:drawAnnouncement(turnPlayer.teamColor, self.endTurnChangeFunction)
     -- AI turn handling

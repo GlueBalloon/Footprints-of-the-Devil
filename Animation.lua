@@ -49,6 +49,17 @@ function Animation:addCrosshairAnimation(unit, attackable)
     end
 end
 
+function Animation:drawYellowDots()
+    if not self.dotData then
+        return
+    end
+    for _, dotData in ipairs(self.dotData) do
+        fill(dotData.color)
+        ellipse(dotData.x, dotData.y, dotData.radius)
+    end
+end
+
+
 function Animation:drawCrosshairsOn(unit, attackable, currentPlayerCombatColor, otherPlayerCombatColor, map, crosshairTweens)
     local function drawScaledCrosshairs(aScale)
         pushStyle()
