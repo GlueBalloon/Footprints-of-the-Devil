@@ -34,8 +34,8 @@ function InGameUI:init(map, queries)
     local largeW, largeH = textSize("0.0") 
     self.countdownSpecs = {
         color = color(229, 225, 211, 173),
-        leftX = self.map.offsetX + (self.map.width * 0.225),
-        rightX = self.map.offsetX + (self.map.width * 0.8),
+        leftX = self.map.offsetX + (self.map.width * 0.16),
+        rightX = self.map.offsetX + (self.map.width * 0.75),
         smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
         largeY = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
         smallFont = smallFont,
@@ -478,18 +478,18 @@ function InGameUI:drawTimeLeft(timeLeft)
     fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
-    text("timer", spec.leftX - 1, spec.smallY - 1)
+    text("timer", spec.rightX - 1, spec.smallY - (self.map.height * 0.65) - 1)
     
     fontSize(spec.largeFont)
-    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.leftX - 1, spec.largeY - 1)
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX - 1, spec.largeY - (self.map.height * 0.65) - 1)
     
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("timer", spec.leftX, spec.smallY)
+    text("timer", spec.rightX, spec.smallY - (self.map.height * 0.65))
     
     fontSize(spec.largeFont)
-    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.leftX, spec.largeY)
+    text(string.format("%.1f", math.max(0.0, timeLeft)), spec.rightX, spec.largeY - (self.map.height * 0.65))
     
     popStyle()
 end
@@ -502,18 +502,18 @@ function InGameUI:drawMovesLeft(movesLeft)
     fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
-    text("moves", spec.rightX - 1, spec.smallY - (self.map.height * 0.65) - 1)
+    text("moves", spec.leftX - 1,  spec.smallY - 1)
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.rightX - 1, spec.largeY - (self.map.height * 0.65) - 1)
+    text(movesLeft, spec.leftX - 1, spec.largeY - 1)
     
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("moves", spec.rightX, spec.smallY - (self.map.height * 0.65))
+    text("moves", spec.leftX, spec.smallY)
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.rightX, spec.largeY - (self.map.height * 0.65))
+    text(movesLeft, spec.leftX, spec.largeY)
     
     popStyle()
 end
