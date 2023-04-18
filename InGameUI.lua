@@ -22,7 +22,7 @@ function InGameUI:init(map, queries)
     self.currentPlayerCombatColor = color(255, 0, 45)
     self.otherPlayerCombatColor = color(215)
     self.animation = Animation(map, self.currentPlayerCombatColor, self.otherPlayerCombatColor)
-    local countdownsW = self.map.cellSize * 5.25
+    local countdownsW = self.map.cellSize * 3.5
     local largeText = "0.0"
     local smallText = "timer timer timer"
     local smallFont = self:fontSizeForWidth("timer timer", countdownsW)
@@ -33,9 +33,9 @@ function InGameUI:init(map, queries)
     fontSize(largeFont)
     local largeW, largeH = textSize("0.0") 
     self.countdownSpecs = {
-        color = color(214, 178, 153, 200),
-        leftX = self.map.offsetX + (self.map.width * 0.5),
-        rightX = self.map.offsetX + (self.map.width * 0.5),
+        color = color(229, 225, 211, 173),
+        leftX = self.map.offsetX + (self.map.width * 0.225),
+        rightX = self.map.offsetX + (self.map.width * 0.8),
         smallY = self.map.offsetY + self.map.height - (smallH * 0.6),
         largeY = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
         smallFont = smallFont,
@@ -65,10 +65,10 @@ function InGameUI:drawAnnouncement(teamColor, fadeCompleteCallback)
         
         local elapsedTime = os.clock() - self.announcementStartTime
         local startSize = 0.05 -- Adjust this value to control the starting size of the rectangle
-        local endSize = 1 -- Adjust this value to control the ending size of the rectangle
-        local scaleSpeed = 3 -- Adjust this value to control the speed of the scaling
-        local timeFadeoutBegins = 0.1 -- Adjust this value to control the time before fade-out starts
-        local timeFadeoutEnds = 0.2 -- Adjust this value to control the time when fade-out ends
+        local endSize = 1.9 -- Adjust this value to control the ending size of the rectangle
+        local scaleSpeed = 1.5 -- Adjust this value to control the speed of the scaling
+        local timeFadeoutBegins = 0.3 -- Adjust this value to control the time before fade-out starts
+        local timeFadeoutEnds = 0.9 -- Adjust this value to control the time when fade-out ends
         
         local scaleFactor = startSize + scaleSpeed * elapsedTime
         scaleFactor = math.min(scaleFactor, endSize)
@@ -475,7 +475,7 @@ function InGameUI:drawTimeLeft(timeLeft)
     pushStyle()
     textAlign(CENTER)
     
-    fill(190, 100, 96)
+    fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
     text("timer", spec.leftX - 1, spec.smallY - 1)
@@ -499,21 +499,21 @@ function InGameUI:drawMovesLeft(movesLeft)
     pushStyle()
     textAlign(CENTER)
     
-    fill(190, 100, 96)
+    fill(190, 100, 96, 140)
     
     fontSize(spec.smallFont)
-    text("moves", spec.rightX - 1, spec.smallY - (self.map.height / 2) - 1)
+    text("moves", spec.rightX - 1, spec.smallY - (self.map.height * 0.65) - 1)
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.rightX - 1, spec.largeY - (self.map.height / 2) - 1)
+    text(movesLeft, spec.rightX - 1, spec.largeY - (self.map.height * 0.65) - 1)
     
     fill(spec.color)
     
     fontSize(spec.smallFont)
-    text("moves", spec.rightX, spec.smallY - (self.map.height / 2))
+    text("moves", spec.rightX, spec.smallY - (self.map.height * 0.65))
     
     fontSize(spec.largeFont)
-    text(movesLeft, spec.rightX, spec.largeY - (self.map.height / 2))
+    text(movesLeft, spec.rightX, spec.largeY - (self.map.height * 0.65))
     
     popStyle()
 end

@@ -137,8 +137,7 @@ function Game:draw(deltaTime)
     local mRec = self.movesLeftRect
     local movesLeft = self.turnSystem.movesPerTurn - self.turnSystem.moveCounter
     self.inGameUI:drawEndTurnButton(eRec.x, eRec.y, eRec.z, eRec.w)
-    self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
-    self.inGameUI:drawMovesLeft(movesLeft)
+
     self.inGameUI:drawAllUnits(self.unitManager.units)
   --  self.inGameUI:drawAttackableTargets(self.unitManager.units)
     self.inGameUI:drawBadgesAndAnimations()
@@ -167,6 +166,8 @@ function Game:draw(deltaTime)
    -- self.inGameUI.animation:drawArrows()
     self.inGameUI:draw(self.unitManager.units)
     self.turnSystem:update(deltaTime)
+    self.inGameUI:drawTimeLeft(self.turnSystem.timeRemaining)
+    self.inGameUI:drawMovesLeft(movesLeft)
 end
 
 function Game:touchInput(touch)
