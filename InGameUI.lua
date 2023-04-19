@@ -39,7 +39,7 @@ function InGameUI:init(map, queries)
         smallYUpper = self.map.offsetY + self.map.height - (smallH * 0.6),
         largeYUpper = self.map.offsetY + self.map.height - ((largeH + smallH) * 0.55),
         smallYLower = self.map.offsetY + (smallH * 0.6),
-        largeYLower = self.map.offsetY + ((largeH + smallH) * 0.55),
+        largeYLower = self.map.offsetY + ((largeH + smallH) * 0.55),      
         smallFont = smallFont,
         largeFont = largeFont
     }
