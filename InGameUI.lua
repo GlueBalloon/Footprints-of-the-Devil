@@ -290,10 +290,7 @@ end
 function InGameUI:updateFlankingArrows(units)
     local currentPlayerTeam = self.queries:getCurrentPlayer().team
     local teamsTable = self.queries:getTeams()
-    for k, v in pairs(teamsTable) do
-    end
-    local sapiensUnits = teamsTable.sapiens
-    local neanderthalUnits = teamsTable.neanderthal
+    local sapiensUnits, neanderthalUnits = teamsTable.sapiens, teamsTable.neanderthal
     
     self.animation.arrowData = {} -- Reset the arrow data table
     self.animation.dotData = {} -- Reset the dot data table
@@ -329,6 +326,46 @@ function InGameUI:updateFlankingArrows(units)
     end
 end
 
+function InGameUI:updateFlankingArrows(units)
+    local currentPlayerTeam = self.queries:getCurrentPlayer().team
+    local teamsTable = self.queries:getTeams()
+    local sapiensUnits, neanderthalUnits = teamsTable.sapiens, teamsTable.neanderthal
+    
+    self.animation.arrowData = {} -- Reset the arrow data table
+    self.animation.dotData = {} -- Reset the dot data table
+    
+    local flankingTables = self:createFlankingTables(neanderthalUnits, sapiensUnits)
+    
+    for _, neanderthal in ipairs(neanderthalUnits) do
+        local flankingData = flankingTables[neanderthal]
+        local adjacentSapiens = flankingData.adjacentUnits.sapiens
+        local isFlanked = self.queries:isFlanked(neanderthal)
+        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        local adjacentCells = self.map:orthogonalCellsFor(nRow, nCol)
+        
+        if isFlanked and #adjacentSapiens > 0 then
+            local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+            table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = adjacentSapiens, color = arrowColor})
+        end
+        
+        if currentPlayerTeam == "sapiens" and #adjacentSapiens > 0 then
+            for _, cell in ipairs(adjacentCells) do
+                local row, col = cell.row, cell.col
+                local unitAtCell = self.queries:getUnitAt(row, col)
+                
+                if not unitAtCell then
+                    -- No unit at the cell, draw a yellow dot
+                    local x, y = self.map:cellRowAndColumnToPoint(row, col)
+                    local dotRadius = self.map.cellSize * 0.1
+                    local dotColor = color(236, 197, 67) -- Yellow color
+                    
+                    -- Store the dot data for drawing later
+                    table.insert(self.animation.dotData, {x = x, y = y, radius = dotRadius, color = dotColor})
+                end
+            end
+        end
+    end
+end
 
 
 
@@ -339,7 +376,6 @@ function InGameUI:createFlankingTables(units)
             emptyCells = self:findEmptyAdjacentCells(unit),
             adjacentUnits = self:findAdjacentUnits(unit)
         }
-        
         flankingTables[unit] = adjacentData
     end
     return flankingTables
