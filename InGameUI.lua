@@ -231,6 +231,180 @@ function InGameUI:updateFlankingArrows(units)
     end
 end
 
+function InGameUI:updateFlankingArrows(units)
+    local currentPlayerTeam = self.queries:getCurrentPlayer().team
+    local teamsTable = self.queries:getTeams()
+    for k, v in pairs(teamsTable) do
+    end
+    local sapiensUnits = teamsTable.sapiens
+    local neanderthalUnits = teamsTable.neanderthal
+    
+    self.animation.arrowData = {} -- Reset the arrow data table
+    self.animation.dotData = {}
+    
+    for _, neanderthal in ipairs(neanderthalUnits) do
+        local adjacentUnits = self:findAdjacentUnits(neanderthal)
+        local flankingSapiens = adjacentUnits.sapiens or {}
+        local isFlanked = self.queries:isFlanked(neanderthal)
+        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        local adjacentCells = self.map:orthogonalCellsFor(nRow, nCol)
+        
+        if isFlanked and #flankingSapiens > 0 then
+            local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+            table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = flankingSapiens, color = arrowColor})
+        end
+        
+        for _, sapiens in ipairs(sapiensUnits) do
+            local sRow, sCol = self.map:pointToCellRowAndColumn(sapiens.x, sapiens.y)
+            if self.map:isAdjacent(sRow, sCol, nRow, nCol) then
+                for _, cell in ipairs(adjacentCells) do
+                    local row, col = cell.row, cell.col
+                    local unitAtCell = self.queries:getUnitAt(row, col)
+                    -- Check if it's the Sapiens' turn
+                    if self.queries:getCurrentPlayer().team ~= "sapiens" then
+                        -- Empty the dotData if it's not the Sapiens' turn
+                        if #self.animation.dotData > 0 then
+                            self.animation.dotData = {}
+                        end
+                    else
+                        -- Add/update the yellow dots during the Sapiens' turn
+                        if not unitAtCell then
+                            -- No unit at the cell, draw a yellow dot
+                            local x, y = self.map:cellRowAndColumnToPoint(row, col)
+                            local dotRadius = self.map.cellSize * 0.1
+                            local dotColor = color(236, 197, 67) -- Yellow color
+                            
+                            -- Store the dot data for drawing later
+                            if not self.animation.dotData then
+                                self.animation.dotData = {}
+                            end
+                            table.insert(self.animation.dotData, {x = x, y = y, radius = dotRadius, color = dotColor})
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+function InGameUI:updateFlankingArrows(units)
+    local currentPlayerTeam = self.queries:getCurrentPlayer().team
+    local teamsTable = self.queries:getTeams()
+    for k, v in pairs(teamsTable) do
+    end
+    local sapiensUnits = teamsTable.sapiens
+    local neanderthalUnits = teamsTable.neanderthal
+    
+    self.animation.arrowData = {} -- Reset the arrow data table
+    self.animation.dotData = {} -- Reset the dot data table
+    
+    for _, neanderthal in ipairs(neanderthalUnits) do
+        local adjacentUnits = self:findAdjacentUnits(neanderthal)
+        local flankingSapiens = adjacentUnits.sapiens or {}
+        local isFlanked = self.queries:isFlanked(neanderthal)
+        local nRow, nCol = self.map:pointToCellRowAndColumn(neanderthal.x, neanderthal.y)
+        local adjacentCells = self.map:orthogonalCellsFor(nRow, nCol)
+        
+        if isFlanked and #flankingSapiens > 0 then
+            local arrowColor = neanderthal == self.selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+            table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = flankingSapiens, color = arrowColor})
+        end
+        
+        if currentPlayerTeam == "sapiens" and #flankingSapiens > 0 then
+            for _, cell in ipairs(adjacentCells) do
+                local row, col = cell.row, cell.col
+                local unitAtCell = self.queries:getUnitAt(row, col)
+                
+                if not unitAtCell then
+                    -- No unit at the cell, draw a yellow dot
+                    local x, y = self.map:cellRowAndColumnToPoint(row, col)
+                    local dotRadius = self.map.cellSize * 0.1
+                    local dotColor = color(236, 197, 67) -- Yellow color
+                    
+                    -- Store the dot data for drawing later
+                    table.insert(self.animation.dotData, {x = x, y = y, radius = dotRadius, color = dotColor})
+                end
+            end
+        end
+    end
+end
+
+
+
+
+function InGameUI:createFlankingTables(units)
+    local flankingTables = {}
+    for _, unit in ipairs(units) do
+        local adjacentData = {
+            emptyCells = self:findEmptyAdjacentCells(unit),
+            adjacentUnits = self:findAdjacentUnits(unit)
+        }
+        
+        flankingTables[unit] = adjacentData
+    end
+    return flankingTables
+end
+
+function InGameUI:findEmptyAdjacentCells(unit)
+    local emptyCells = {}
+    local uRow, uCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local adjacentCells = self.map:orthogonalCellsFor(uRow, uCol)
+    
+    for _, cell in ipairs(adjacentCells) do
+        local unitAtCell = self.queries:getUnitAt(cell.row, cell.col)
+        if not unitAtCell then
+            table.insert(emptyCells, cell)
+        end
+    end
+    
+    return emptyCells
+end
+
+function InGameUI:findAdjacentUnits(unit)
+    local adjacentUnits = {
+        sapiens = {},
+       neanderthals = {}
+    }
+    local uRow, uCol = self.map:pointToCellRowAndColumn(unit.x, unit.y)
+    local adjacentCells = self.map:orthogonalCellsFor(uRow, uCol)
+    
+    for _, cell in ipairs(adjacentCells) do
+        local unitAtCell = self.queries:getUnitAt(cell.row, cell.col)
+        if unitAtCell then
+            if unitAtCell.team == "sapiens" then
+                table.insert(adjacentUnits.sapiens, unitAtCell)
+            elseif unitAtCell.team == "neanderthal" then
+                table.insert(adjacentUnits.neanderthals, unitAtCell)
+            end
+        end
+    end
+    
+    return adjacentUnits
+end
+
+function InGameUI:updateFlankingArrowData(flankingTables, currentPlayerTeam, selectedUnit)
+    for neanderthal, adjacentData in pairs(flankingTables) do
+        local arrowColor = neanderthal == selectedUnit and self.currentPlayerCombatColor or self.otherPlayerCombatColor
+        table.insert(self.animation.arrowData, {neanderthal = neanderthal, flankingSapiens = adjacentData.adjacentUnits.sapiens, color = arrowColor})
+    end
+end
+
+function InGameUI:updateYellowDotData(flankingTables, currentPlayerTeam)
+    if currentPlayerTeam == "sapiens" then
+        self.animation.dotData = {} -- Reset the dot data table
+        for neanderthal, adjacentData in pairs(flankingTables) do
+            for _, cell in ipairs(adjacentData.emptyCells) do
+                local x, y = self.map:cellRowAndColumnToPoint(cell.row, cell.col)
+                local dotRadius = self.map.cellSize * 0.1
+                local dotColor = color(236, 197, 67) -- Yellow color
+                
+                -- Store the dot data for drawing later
+                table.insert(self.animation.dotData, {x = x, y = y, radius = dotRadius, color = dotColor})
+            end
+        end
+    end
+end
+
 function InGameUI:createDamageAnimation(unit, damage)
     local anim = {
         unit = unit,
