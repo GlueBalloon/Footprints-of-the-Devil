@@ -145,6 +145,9 @@ function Animation:drawFlankingArrows()
                 
                 local arrowMesh = self:createArrowMesh(arrowColor, startPoint, endPoint, width, arrowHeadLength)
                 self.arrowMeshes[sapiens] = {mesh = arrowMesh, startPoint = startPoint, endPoint = endPoint, direction = direction}
+            else
+                -- Update the arrow color if it already exists
+                self.arrowMeshes[sapiens].mesh:setColors(arrowColor)
             end
             
             local arrowMesh = self.arrowMeshes[sapiens].mesh
